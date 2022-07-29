@@ -1,0 +1,10 @@
+--1. Вывод текста в консоль
+Write-Output "Hello World"
+
+--2. Работа с массивом
+
+[byte[]]$readBuffer = 0,1,2,3   --Создание и инициализация массива
+
+--3. Запуск dotnet программы
+ 
+dotnet Indusoft.IDSP.EventFrames.Workers.dll urls=http://localhost:7721
