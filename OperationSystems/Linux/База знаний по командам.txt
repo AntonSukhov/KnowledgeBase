@@ -1,0 +1,104 @@
+win + space - переключение языка
+
+
+1) Команда ps (https://losst.ru/komanda-ps-v-linux)
+
+Утилита ps для просмотра списка процессов в Linux
+
+ps опции
+
+Примеры:
+
+ps -d   выбрать все процесс, включая фоновые и лидеры групп:
+
+ps -p 943  выбрать процесс по Pid = 943
+
+ps -fp 943  выбрать процесс по Pid = 943 с выводом доступной информации
+
+ps -Fp 943  выбрать процесс по Pid = 943 с выводом максимум доступной информации
+
+ps -mFp 943  выбрать процесс по Pid = 943 с выводом максимум доступной информации и отображением потоков ниже процесса
+
+ps -mFC dotnet  выбрать процесс по имени dotnet (команда -С) с выводом максимум доступной информации и отображением потоков ниже процесса
+
+ps aux | grep dotnet  вывести информацию о процессе dotnet
+
+ps aux | awk '{print $2}' вывести содержимое второго столбца (Pid)
+
+2) Работа с dotnet
+
+2.1) Установка dotnet некоторой версии
+
+2.1.1) Установка с помощью snap
+
+sudo snap install dotnet-sdk --classic --channel=6.0
+sudo snap alias dotnet-sdk.dotnet dotnet
+
+2.1.2) Установка с помощью скрипта dotnet-install (https://docs.microsoft.com/ru-ru/dotnet/core/tools/dotnet-install-script)
+
+cd $HOME/Programs
+
+Скачать версию скрипта для Linux (https://dot.net/v1/dotnet-install.sh), например, в каталог $HOME/Programs
+
+chmod ugo+rwx dotnet-install.sh   Даём все права (на выполнение в том числе) всем пользователям для работы с dotnet-install.sh
+
+ls -l                             Проверям права
+
+./dotnet-install.sh -c current    Запускаем на выполнение скрипт в данном случае -с current означает, что будет установлена SDK последней версии
+
+gedit ~/.bashrc                   Открываем файл на редактирование и в конец файла добавляем следующий текст: 
+                                  export DOTNET_ROOT=$HOME/.dotnet
+								  export PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools
+								  
+gedit ~/.bash_profile             Открываем файл на редактирование и в конец файла добавляем следующий текст: 
+                                  export DOTNET_ROOT=$HOME/.dotnet
+								  export PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools	
+
+dotnet --version                  Проверяем получение версии dotnet								  
+								    
+
+2.2) Удаление dotnet
+
+sudo snap remove --purge dotnet-sdk
+sudo apt remove --purge dotnet-runtime
+
+2.3) Установка dotnet-dump
+
+dotnet tool install --global dotnet-dump
+
+2.4) Удалить dotnet-dump
+
+dotnet tool uninstall --global dotnet-dump
+
+3) Команда find
+
+Примеры:
+
+sudo find / -name dotnet-dump   - поиск всех каталогов названиями dotnet-dump
+
+4) Открыть файл на редактирование
+
+Примеры:
+
+gedit ~/.bashrc
+gedit ~/.bash_profile
+
+cat << \EOF >> ~/.bash_profile
+>#Сохранить в файл
+>EOF
+
+5) Переменная PATH (https://losst.ru/peremennaya-path-v-linux)
+
+Эта переменная позволяет существенно сократить длину набираемых команд в терминале или в скрипте, освобождая от необходимости каждый раз указывать полные пути к требуемым файлам. 
+
+Примеры:
+
+echo $PATH       -посмотреть содержимое переменной $PATH
+export PATH="$PATH:$HOME/.dotnet/tools"
+
+6) Запустить программу или скрипт
+
+cd Programs
+sudo ./dotnet-install.sh -c Current
+
+
