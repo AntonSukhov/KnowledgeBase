@@ -44,8 +44,7 @@ chmod ugo+rwx dotnet-install.sh   Даём все права (на выполн�
 
 ls -l                             Проверям права
 
-./dotnet-install.sh -c current    Запускаем на выполнение скрипт в данном случае -с current означает, что будет установлена SDK последней версии
-
+./dotnet-install.sh -c current    Запускаем на выполнение скрипт в данном случае -с current означает, что будет установлена SDK последней верси
 gedit ~/.bashrc                   Открываем файл на редактирование и в конец файла добавляем следующий текст: 
                                   export DOTNET_ROOT=$HOME/.dotnet
 								  export PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools
@@ -55,7 +54,17 @@ gedit ~/.bash_profile             Открываем файл на редакт�
 								  export PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools	
 
 dotnet --version                  Проверяем получение версии dotnet								  
-								    
+	
+2.1.3) Установка с помощью apt-get
+
+wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+
+sudo dpkg -i packages-microsoft-prod.deb
+
+rm packages-microsoft-prod.deb
+
+sudo apt-get update;
+sudo apt-get install -y dotnet-sdk-6.0
 
 2.2) Удаление dotnet
 
@@ -100,5 +109,16 @@ export PATH="$PATH:$HOME/.dotnet/tools"
 
 cd Programs
 sudo ./dotnet-install.sh -c Current
+ 
+7) Команда ls
+
+Примеры:
+
+ls -l| grep "^-" | wc | awk '{print $1}'                               вывод числа файлов в текущем каталоге
+ls -l --ignore='TSDBApi.xml'| grep "^-" | wc | awk '{print $1}' 
+ls -lt --ignore='TSDBApi.xml'| grep "^-" | awk '{print $9}' | head -1
+
+
+
 
 
