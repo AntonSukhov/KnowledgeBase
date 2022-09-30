@@ -70,6 +70,7 @@ sudo apt-get install -y dotnet-sdk-6.0
 
 sudo snap remove --purge dotnet-sdk
 sudo apt remove --purge dotnet-runtime
+sudo apt remove --purge dotnet-sdk
 
 2.3) Установка dotnet-dump
 
