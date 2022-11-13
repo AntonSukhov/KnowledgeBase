@@ -1,0 +1,27 @@
+--1. Создание веб-приложения ASP.NET Core Net5 RazorPages
+
+cd D:\Examples\ASP.Net.Core\RazorPages
+dotnet new sln -n WebApplication1
+dotnet new webapp --framework "net5.0" -o WebApplication1
+dotnet sln add WebApplication1 
+
+--2. Собрать приложение
+
+cd D:\Examples\ASP.Net.Core\RazorPages
+dotnet build
+
+--3. Запуск приложения
+
+cd D:\Examples\ASP.Net.Core\RazorPages
+dotnet run --project WebApplication1
+
+cd D:\Examples\ASP.Net.Core\RazorPages\WebApplication1
+dotnet run
+
+--4. Добавить/удалить в проект Nuget-пакет
+
+cd D:\Examples\ASP.Net.Core\RazorPages\WebApplication1
+dotnet add package Newtonsoft.Json
+
+cd D:\Examples\ASP.Net.Core\RazorPages\WebApplication1
+dotnet remove package Newtonsoft.Json
