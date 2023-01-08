@@ -1,0 +1,20 @@
+--1. Восстановление базы данных из файла (RESTORE DATABASE)
+
+RESTORE DATABASE DbContractGpd
+FROM DISK = 'C:\Users\Anton\Downloads\DbContractGpd_backup_2.bak'    
+WITH REPLACE,
+MOVE 'DbContractGpd_Data' TO 'C:\Users\Anton\AppData\Local\Microsoft\Microsoft SQL Server Local DB\Instances\mssqllocaldb\DbContractGpd.mdf',
+MOVE 'DbContractGpd_Log' TO 'C:\Users\Anton\AppData\Local\Microsoft\Microsoft SQL Server Local DB\Instances\mssqllocaldb\DbContractGpd.ldf'
+
+где DbContractGpd_Data и DbContractGpd_Log - логические имена файлов mdf и ldf из файла bak
+
+--2. Получить информацию о резервной копии базы данных
+
+RESTORE FILELISTONLY FROM DISK = 'C:\Users\Anton\Downloads\DbContractGpd_backup_2.bak' WITH FILE = 1
+GO
+
+--Результат команды:
+
+LogicalName	PhysicalName	Type	FileGroupName	Size	MaxSize	FileId	CreateLSN	DropLSN	UniqueId	ReadOnlyLSN	ReadWriteLSN	BackupSizeInBytes
+DbContractGpd_Data	E:\SQLDatabases\DbContractGpd.MDF	D	PRIMARY	18022400	35184372080640	1	0	0	05E9A4E4-C539-47E1-AA97-3C8E38967114	0	0	12124160
+DbContractGpd_Log	E:\sql_logs\DbContractGpd.LDF	L	NULL	16973824	2199023255552	2	0	0	ACC80FF8-3EC5-40E8-B81C-DF1B007BB54E	0	0	0
