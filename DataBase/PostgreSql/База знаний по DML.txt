@@ -1,0 +1,6 @@
+--1. Удаление данных
+
+--1.1 Удаление с помощью конструкции IN и подзапроса
+
+DELETE FROM films
+WHERE producer_id IN (SELECT id FROM producers WHERE name = 'foo');
