@@ -1,0 +1,72 @@
+--1. Разница двух типизированных коллекций
+
+--1.1 Метод Except 
+
+Пример 1 
+
+
+var entities = new List<Customer>{ 
+	new Customer{Id = 1, GroupId = 10}, 
+	new Customer{Id = 3, GroupId = 10},
+	new Customer{Id = 4, GroupId = 10},
+	new Customer{Id = 5, GroupId = 12},
+	new Customer{Id = 6, GroupId = 13}
+};
+		
+var results = new List<Customer>{ 
+	new Customer{Id = 5, GroupId = 12},
+	new Customer{Id = 6, GroupId = 13}
+};
+
+public class CustomerComparer : IEqualityComparer<Customer>   
+{
+	bool IEqualityComparer<Customer>.Equals(Customer o1, Customer o2)
+	{            
+		return (o1.Id.Equals(o2.Id));        
+	}
+
+	int IEqualityComparer<Customer>.GetHashCode(Customer obj)
+	{
+		if (Object.ReferenceEquals(obj, null))
+			return 0;               
+
+		return obj.Id.GetHashCode();       
+	}
+}
+
+//В коллекцию results добавляем customer из entities, которых нет в results
+results.AddRange(entities.Except(results, new CustomerComparer()));
+
+//Результаты:
+Id:1 GroupId:10
+Id:3 GroupId:10
+Id:4 GroupId:10
+Id:5 GroupId:12
+Id:6 GroupId:13
+
+--1.2 Метод ExceptBy Nuget пакета morelinq
+
+Пример 1 
+
+var entities = new List<Customer>{ 
+	new Customer{Id = 1, GroupId = 10}, 
+	new Customer{Id = 3, GroupId = 10},
+	new Customer{Id = 4, GroupId = 10},
+	new Customer{Id = 5, GroupId = 12},
+	new Customer{Id = 6, GroupId = 13}
+};
+		
+var results = new List<Customer>{ 
+	new Customer{Id = 5, GroupId = 12},
+	new Customer{Id = 6, GroupId = 13}
+};
+
+//В коллекцию results добавляем customer из entities, которых нет в results
+results.AddRange(entities.ExceptBy(results, p => p.Id));
+
+//Результаты:
+Id:1 GroupId:10
+Id:3 GroupId:10
+Id:4 GroupId:10
+Id:5 GroupId:12
+Id:6 GroupId:13
