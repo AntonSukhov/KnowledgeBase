@@ -8,3 +8,152 @@ Write-Output "Hello World"
 --3. Запуск dotnet программы
  
 dotnet Indusoft.IDSP.EventFrames.Workers.dll urls=http://localhost:7721
+
+--4. Получение данные счетчиков производительности с локальных и удаленных компьютеров (Get-Counter)
+
+--Запускать команды только от имени администратора
+--https://learn.microsoft.com/ru-ru/powershell/module/microsoft.powershell.diagnostics/get-counter?view=powershell-7.2
+
+Get-Counter -Counter "path" -SampleInterval 2 -MaxSamples 3
+
+где -Counter        - указывает путь к счетчику производительности
+    "path"          - строка с путем к счетчику производительности
+    -SampleInterval - задает интервал для проверки счетчика (например, 2 секунды)
+	-MaxSamples     - максимальное количество раз для проверки счетчика (например, 3)
+
+"\\MachineName\CategoryName(InstanceName)\CounterName"	
+где MachineName  - название компьютера у которого есть счетчик производительности.
+                   символ "." в столбце MachineName означает локальный компьютер.
+				   если не указано значение, то MachineName соответсвует локальному компьютеру.
+	CategoryName - название категории счетчика производительности (например, Processor)
+    InstanceName - название инстанции категории счетчика производительности (например, _Total)
+	CounterName  - название счетчика производительности (например, % Disk Time)
+	
+Примеры:
+
+Get-Counter -Counter "\Processor(_Total)\% Idle Time" -SampleInterval 2 -MaxSamples 3
+Get-Counter -Counter '\Processor(_Total)\% Processor Time' -ComputerName 'khubetsov-pc'
+Get-Counter -Counter "\APP_POOL_WAS(DefaultAppPool)\Current Application Pool State" -SampleInterval 2 -MaxSamples 3
+Get-Counter -Counter "\APP_POOL_WAS(DefaultAppPool)\Current Application Pool Uptime" -SampleInterval 2 -MaxSamples 3
+Get-Counter -Counter "\\khubetsov-pc\APP_POOL_WAS(DefaultAppPool)\Current Application Pool Uptime" -SampleInterval 2 -MaxSamples 3
+Get-Counter -Counter "\\khubetsov-pc\APP_POOL_WAS(DefaultAppPool)\Total Application Pool Uptime" -SampleInterval 2 -MaxSamples 3
+
+
+--5. Использование PowerShell в C#
+
+--5.1 Выполнение команды PowerShell
+
+Пример 1:
+
+var ps = PowerShell.Create();
+
+var command = new Command(@"Get-Counter", isScript: false);
+
+var commandParameter = new CommandParameter("ListSet", "*");
+command.Parameters.Add(commandParameter);
+
+ps.Commands.AddCommand(command);
+
+var result = ps.Invoke();
+
+Пример 2 (более компактная форма):
+
+var result = PowerShell.Create()
+					   .AddCommand("Get-Counter")
+					   .AddParameter("ListSet", "*")
+					   .Invoke();
+					   
+					   
+--5.2 Получение текста ошибки при выполнении команды/или скрипта
+
+var ps = PowerShell.Create();
+
+var command = new Command(@"Get-Counter", isScript: false);
+
+var commandParameter = new CommandParameter("Counter", @"\APP_POOL_WAS(DefaultAppPool)\Текущее время работы пула приложений");
+command.Parameters.Add(commandParameter);
+
+ps.Commands.AddCommand(command);
+
+var result = ps.Invoke();
+
+if(ps.HadErrors)
+{
+	foreach (var error in ps.Streams.Error)
+	{
+		Console.WriteLine(error.Exception);
+	}
+}
+
+--5.3 Получение результатов выполнения команды
+
+Пример 1 (не самый лучший способ):
+var ps = PowerShell.Create();
+
+var command = new Command(@"Get-Counter", isScript: false);
+
+var commandParameter = new CommandParameter("Counter", @"\APP_POOL_WAS(DefaultAppPool)\Текущее время работы пула приложений");
+command.Parameters.Add(commandParameter);
+
+ps.Commands.AddCommand(command);
+
+var result = ps.Invoke();
+
+if (!ps.HadErrors)
+{
+	foreach (var r in result)
+	{
+		var object1 = (dynamic[])r.Members["CounterSamples"].Value;
+		var value = object1.FirstOrDefault()?.CookedValue ?? default;
+
+		Console.WriteLine(value);
+	}
+}
+	
+--5.4 Получение результатов выполнения скрипта
+
+Пример 1:
+
+var ps = PowerShell.Create();
+
+var command = new Command(@"(Get-Counter -Counter '\APP_POOL_WAS(DefaultAppPool)\Текущее время работы пула приложений').CounterSamples", isScript: true);
+
+ps.Commands.AddCommand(command);
+
+var result = ps.Invoke();
+
+if (!ps.HadErrors)
+{
+	foreach (var r in result)
+	{
+		Console.WriteLine($"{r.Members["Path"].Value} {r.Members["InstanceName"].Value} {r.Members["CookedValue"].Value}");
+	}
+}
+
+Пример 2 (более компактная версия):
+
+var ps = PowerShell.Create()
+                   .AddScript(@"(Get-Counter -Counter '\APP_POOL_WAS(DefaultAppPool)\Текущее время работы пула приложений').CounterSamples");
+
+var result = ps.Invoke();
+
+if (!ps.HadErrors)
+{
+	foreach (var r in result)
+	{
+		Console.WriteLine($"{r.Members["Path"].Value} {r.Members["InstanceName"].Value} {r.Members["CookedValue"].Value}");
+	}
+}
+
+
+--6. Смена культуры на время выполнения команды в скрипте
+
+Пример 1:
+
+$c1 = [System.Threading.Thread]::CurrentThread.CurrentUICulture; 
+$c2 = [System.Threading.Thread]::CurrentThread.CurrentCulture; 
+[System.Threading.Thread]::CurrentThread.CurrentUICulture = 'en-US'; 
+[System.Threading.Thread]::CurrentThread.CurrentCulture = 'en-US';
+get-date -Date '01/10/2017';
+[System.Threading.Thread]::CurrentThread.CurrentUICulture = $c1; 
+[System.Threading.Thread]::CurrentThread.CurrentCulture = $c2;
