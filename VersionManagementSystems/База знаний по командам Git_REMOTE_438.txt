@@ -93,7 +93,6 @@ git commit -m "Initial project version"  //Фиксирование измене
 cd c:\Git\MyProjectClone
 git clone c:\Git\MyProject ./                                         //Клонирование репозитория c:\Git\MyProject в текущую папку
 git clone https://github.com/dotnet-architecture/eShopOnContainers ./ //Клонирование репозитория https://github.com/dotnet-architecture/eShopOnContainers в текущую папку
-git clone https://github.com/AntonSukhov/WebApi.git ./
 
 --Результаты git clone c:\Git\MyProject ./ 
 Cloning into '.'...
@@ -757,7 +756,7 @@ nothing to commit, working tree clean
 * 97a5ce9 (HEAD -> master) commit2
 
 
-/*21. Удаление изменений (Reset)*/
+/*21. Удаление изменений*/
 
 git reset --hard HEAD~ -- --hard означает полное удаление.  HEAD~ означает "один коммит от последнего коммита"  (Важно!!!!, команда носит необратимый характер, поэтому перед выполнение подумать)
 
@@ -772,43 +771,7 @@ git checkout master       --Переходит на нужную ветку (н�
 git cherry-pick c435f4b5  --Указываем Id (можно часть) нужного коммита 
 
 
-/*24. Служебные команды*/
-
---24.1 Информация о текущем коммите (cat-file)
-
-git cat-file -p HEAD
-
---Результат команды git cat-file -p HEAD
-tree ede1eb80b05f0450ba8f6b28c33ab64ee9acbf39
-parent 01acc875a1fcc268f087092ce34d4cb7f9fd8a5d
-author AntonSukhov <RealComrade2011@yandex.ru> 1673679933 +0300
-committer AntonSukhov <RealComrade2011@yandex.ru> 1673679933 +0300
-
-C10
-
---24.4 Информация о содержимом (дереве) текущего коммита ()
-
-git ls-tree -r HEAD
-
---Результат команды git ls-tree -r HEAD
-100644 blob 7807f4c45918e132aaa527ea52d675a5005e3cfd    Models/CustomerModel.cs
-100644 blob 1766b467d974c2b7e460f298c5b1bffbb9c621f2    Models/DepartmentModel.cs
-100644 blob 492716c9e6e41b37b390af742d8650d3de88e2c1    Models/EmployeeModel.cs
-100644 blob e371b6ce374fba0f6cdc133cf4483f6761bb633a    Models/TicketModel.cs
-100644 blob f4a868135ae269314b18420b37903ffe6aed4739    Models/WorkTypeModel.cs
-
---24.3 Информация о текущем состоянии индекса (ls-files)
-
-git ls-files -s
-
---Результат команды git ls-files -s
-100644 7807f4c45918e132aaa527ea52d675a5005e3cfd 0       Models/CustomerModel.cs
-100644 1766b467d974c2b7e460f298c5b1bffbb9c621f2 0       Models/DepartmentModel.cs
-100644 492716c9e6e41b37b390af742d8650d3de88e2c1 0       Models/EmployeeModel.cs
-100644 e371b6ce374fba0f6cdc133cf4483f6761bb633a 0       Models/TicketModel.cs
-100644 f4a868135ae269314b18420b37903ffe6aed4739 0       Models/WorkTypeModel.cs
-
---24. Работа с submodules
+/*24. Работа с submodules*/
 
 
 git push -u --recurse-submodules=on-demand --progress "origin" refs/heads/bugfix/57581_TSDB_Connect_Issues_Connection_Check_Error:refs/heads/bugfix/57581_TSDB_Connect_Issues_Connection_Check_Error

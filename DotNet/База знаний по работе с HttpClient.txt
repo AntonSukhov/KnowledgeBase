@@ -1,0 +1,68 @@
+/*Создание HttpClient*/
+
+//Создание с помощью new
+
+//using (var client = new HttpClient(new HttpClientHandler()
+//{
+//    UseDefaultCredentials = true
+//}))
+//{
+
+//    var json = JsonConvert.SerializeObject(request1);
+
+//    using (var httpContent = new StringContent(json, System.Text.Encoding.UTF8, "application/json"))
+//    {
+
+//        using (var response2 = AsyncHelper.RunSync(() => client.PostAsync("http://192.168.10.212:7701/api/authentication/log-in-negotiation", httpContent)))
+//        {
+//            var content = AsyncHelper.RunSync(() => response2.Content.ReadAsStringAsync());
+
+//            var objectV = JsonConvert.DeserializeObject<GetLogInResponse>(content);
+
+//        }
+
+//    }
+//}
+
+
+//Создание с помощью IHttpClientFactory
+
+Пример 1:
+
+var request1 = new GetLogInRequest
+{
+	ApplicationName = "I-DS/EC",
+	RoleName = "defaultRole",
+	UserName = WindowsIdentity.GetCurrent().Name,
+	IsLicenced = true,
+	Password = string.Empty
+};
+
+IServiceCollection serviceCollection = new ServiceCollection();
+var name = "negotiate";
+
+serviceCollection.AddHttpClient(name)
+				 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { UseDefaultCredentials = true });
+
+var httpClientFactory = serviceCollection.BuildServiceProvider()
+										 .GetRequiredService<IHttpClientFactory>();
+
+
+using (var client = httpClientFactory.CreateClient(name))
+{
+
+	var json = JsonConvert.SerializeObject(request1);
+
+	using (var httpContent = new StringContent(json, System.Text.Encoding.UTF8, "application/json"))
+	{
+
+		using (var response2 = AsyncHelper.RunSync(() => client.PostAsync("http://localhost:58838/api/authentication/log-in-negotiation", httpContent)))
+		{
+			var content = AsyncHelper.RunSync(() => response2.Content.ReadAsStringAsync());
+
+			var objectV = JsonConvert.DeserializeObject<GetLogInResponse>(content);
+
+		}
+
+	}
+}

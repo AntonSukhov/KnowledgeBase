@@ -5,7 +5,7 @@
 Пример 1 
 
 
-var entities = new List<Customer>{ 
+var customers1 = new List<Customer>{ 
 	new Customer{Id = 1, GroupId = 10}, 
 	new Customer{Id = 3, GroupId = 10},
 	new Customer{Id = 4, GroupId = 10},
@@ -13,10 +13,12 @@ var entities = new List<Customer>{
 	new Customer{Id = 6, GroupId = 13}
 };
 		
-var results = new List<Customer>{ 
+var customers2 = new List<Customer>{ 
 	new Customer{Id = 5, GroupId = 12},
 	new Customer{Id = 6, GroupId = 13}
 };
+
+var results = new List<Customer>();
 
 public class CustomerComparer : IEqualityComparer<Customer>   
 {
@@ -34,8 +36,8 @@ public class CustomerComparer : IEqualityComparer<Customer>
 	}
 }
 
-//В коллекцию results добавляем customer из entities, которых нет в results
-results.AddRange(entities.Except(results, new CustomerComparer()));
+//В коллекцию results добавляем разность двух коллекций
+results.AddRange(customers1.Except(customers2, new CustomerComparer()));
 
 //Результаты:
 Id:1 GroupId:10

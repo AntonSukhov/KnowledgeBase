@@ -4,3 +4,15 @@
 
 DELETE FROM films
 WHERE producer_id IN (SELECT id FROM producers WHERE name = 'foo');
+
+
+--2. Обновление данных
+
+--2.1 Update and Join
+
+update tsdb.metricattribute as ma 
+    set code = 'Random.Real8'                       --важно: столбец code без псевдонима ma
+FROM  tsdb.metricinfo as mi
+where ma.metricinfoid = mi.id                       --замена Join
+      AND mi.created >= '2023-04-21 00:00:00'
+      AND ma.code = 'InstrumentTag'

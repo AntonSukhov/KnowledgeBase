@@ -389,7 +389,7 @@ git push -u origin featureA         //Создаёт отслеживаемую 
                                     //Команду требуется выполнить единожды, чтобы потом можно было отправлять/принимать изменения лишь выполняя git push из ветки без указания всяких алиасов для сервера и удалённых веток. 
 									//Это сделано для удобства.
 git push -u origin featureB:featureBee //выполняет отправку изменений ветки featureB текущего репозитория в ветку featureBee на сервере origin
-
+								
 
 --Результаты git remote
 origin
@@ -808,7 +808,4 @@ git ls-files -s
 100644 e371b6ce374fba0f6cdc133cf4483f6761bb633a 0       Models/TicketModel.cs
 100644 f4a868135ae269314b18420b37903ffe6aed4739 0       Models/WorkTypeModel.cs
 
---24. Работа с submodules
 
-
-git push -u --recurse-submodules=on-demand --progress "origin" refs/heads/bugfix/57581_TSDB_Connect_Issues_Connection_Check_Error:refs/heads/bugfix/57581_TSDB_Connect_Issues_Connection_Check_Error
