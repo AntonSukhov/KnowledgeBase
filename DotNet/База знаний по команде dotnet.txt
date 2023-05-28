@@ -25,3 +25,7 @@ dotnet add package Newtonsoft.Json
 
 cd D:\Examples\ASP.Net.Core\RazorPages\WebApplication1
 dotnet remove package Newtonsoft.Json
+
+--5. Создание Razor страницы
+
+dotnet new page -n Index -o Pages/
