@@ -1,0 +1,21 @@
+/*1. OFFSET-FETCH */
+--(https://info-comp.ru/obucheniest/670-offset-fetch-in-t-sql.html)
+
+--1.1 Пропустить n-ое кол-во строк
+
+--Пример 1: пропустить 3 строки
+
+SELECT Id, Name
+FROM WorkTypes
+ORDER BY 1
+OFFSET 3 ROWS 
+
+--1.2 Пропустить n-ое кол-во строк и возвратить m следующих строк
+
+--Пример 2: пропустить 3 строк и возвратить 10 строк
+
+SELECT Id, Name
+FROM WorkTypes
+ORDER BY 1
+OFFSET 3 ROWS FETCH NEXT 10 ROWS ONLY
+
