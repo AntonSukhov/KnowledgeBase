@@ -389,6 +389,8 @@ git push -u origin featureA         //Создаёт отслеживаемую 
 									//Это сделано для удобства.
 git push -u origin featureB:featureBee //выполняет отправку изменений ветки featureB текущего репозитория в ветку featureBee на сервере origin
 
+git push --set-upstream origin features/63751_I-DS_DL_LibreOffice_Basic_functionality_Archived_Val  //отправка изменений с текущей ветки на сервер создавая новую ветку features/63751_I-DS_DL_LibreOffice_Basic_functionality_Archived_Val
+
 
 --Результаты git remote
 origin
@@ -775,3 +777,8 @@ git cherry-pick c435f4b5  --Указываем Id (можно часть) нуж
 
 
 git push -u --recurse-submodules=on-demand --progress "origin" refs/heads/bugfix/57581_TSDB_Connect_Issues_Connection_Check_Error:refs/heads/bugfix/57581_TSDB_Connect_Issues_Connection_Check_Error
+
+/*25. Обновление версии Git*/
+
+git update-git-for-windows
+git --version

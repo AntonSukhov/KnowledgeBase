@@ -1,0 +1,40 @@
+--1. Установить библиотеку requests
+
+pythompython -m pip install requests
+
+Полное руководство (в Windows) по установке всех необходимых программ для работы с библиотекой requests в LibreOffice:
+1. В cmd введите команду cd к каталогу program каталога LibreOffice где находиться python.exe
+например, cd C:\Program Files\LibreOffice\program
+2. Скачать по ссылке https://bootstrap.pypa.io/get-pip.py. файл get-pip.py и скопировать его в каталог пункта 1;
+3. В командной строке выполнить команду python get-pip.py;
+4. В командной строке выполнить команду python -m pip install requests
+5. Для проверки в командой строке выполнить команду python. exe и ввести команду import requests, ошибок не должно быть
+
+--2. Обновить версию pip
+python -m pip install --upgrade pip
+
+--3. Посмотреть версию python
+
+python3 --version
+python --version
+
+--4. Установить версию python
+
+sudo apt install python 3.11
+
+--5. Аналог LINQ в python
+
+--5.1 FirstOrDefault
+
+Пример 1:
+
+from models.connectionModel import ConnectionModel
+
+connectionName: str = "C1"
+connections: list[ConnectionModel] = [ConnectionModel("1", "C1"), ConnectionModel("2", "C2"), ConnectionModel("3", "C3")]
+firstDefault: ConnectionModel = next((c for c in connections if c.Name == connectionName), None)
+
+print(firstDefault)
+
+Результат:
+C1
