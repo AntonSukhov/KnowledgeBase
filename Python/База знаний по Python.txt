@@ -1,6 +1,7 @@
---1. Установить библиотеку requests
+--1 Установить библиотеку c помощью pip
 
-pythompython -m pip install requests
+Например библиотеку requests
+python -m pip install requests
 
 Полное руководство (в Windows) по установке всех необходимых программ для работы с библиотекой requests в LibreOffice:
 1. В cmd введите команду cd к каталогу program каталога LibreOffice где находиться python.exe
@@ -10,21 +11,45 @@ pythompython -m pip install requests
 4. В командной строке выполнить команду python -m pip install requests
 5. Для проверки в командой строке выполнить команду python. exe и ввести команду import requests, ошибок не должно быть
 
---2. Обновить версию pip
+--2 Установить библиотеку с помощью offline установки
+
+Например библиотеку pycryptodome последней версии (на момент написании рекомендации это версия 3.19.0)
+
+1. Создать текстовый файл с именем, например, requirements. Который содержит следующую строчку:
+pycryptodome>=3.19.0
+
+2. Указываем каталог в котором будут храниться файлы whl библиотеки с помощью команды
+C:\GitRepositories\I-DS-DL-LibreOffice\master\Indusoft.Datalink\python\python_packages\packages
+
+3. Скачиваем файлы whl библиотеки с помощью команды 
+
+pip download -r C:\GitRepositories\I-DS-DL-LibreOffice\master\Indusoft.Datalink\python\python_packages\requirements.txt
+
+где -r path  - путь к файлу requirements.txt
+
+4. Переход в головную папку
+
+cd /opt/libreoffice7.5/program
+
+5. Установить все необходимые пакеты с помощью команды
+
+python -m pip install --no-index --find-links C:\GitRepositories\I-DS-DL-LibreOffice\master\Indusoft.Datalink\python\python_packages\packages -r C:\GitRepositories\I-DS-DL-LibreOffice\master\Indusoft.Datalink\python\python_packages\requirements.txt
+
+--3. Обновить версию pip
 python -m pip install --upgrade pip
 
---3. Посмотреть версию python
+--4. Посмотреть версию python
 
 python3 --version
 python --version
 
---4. Установить версию python
+--5. Установить версию python
 
 sudo apt install python 3.11
 
---5. Аналог LINQ в python
+--6. Аналог LINQ в python
 
---5.1 FirstOrDefault
+--6.1 FirstOrDefault
 
 Пример 1:
 
