@@ -94,3 +94,11 @@ fffff-> Represents the five most significant digits of the seconds' fraction; th
 ffffff-> Represents the six most significant digits of the seconds' fraction; that is, it represents the millionths of a second in a date and time value.
  
 fffffff-> Represents the seven most significant digits of the second's fraction; that is, it represents the ten-millionths of a second in a date and time value.
+
+2.Dictionary
+
+2.1 Преобразование в Dictionary
+
+var input = new[] { new { Path = "p1", Id = 1 }, new { Path = "p2", Id = 2 }, new { Path = "p3", Id = 3 } };
+
+var output = input.ToDictionary(p => p.Path, p => new { p.Path, p.Id });
