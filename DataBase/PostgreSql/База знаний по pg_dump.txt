@@ -1,0 +1,7 @@
+pg_dump -U postgres -h localhost -p 5432 -Fp -b -v -f DbContractBackup.sql DbContract
+
+
+postgres             - пользователь
+5432                 - порт
+DbContract           - имя базы данных
+DbContractBackup.sql - имя файла для создания БД из резервной копии
