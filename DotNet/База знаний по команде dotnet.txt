@@ -34,3 +34,10 @@ dotnet remove package Newtonsoft.Json
 --6. Создание Razor страницы
 
 dotnet new page -n Index -o Pages/
+
+--7. Создать приложение тестирования (XUnit)
+cd E:\Examples\C#\Тестирование\XUnit\Base
+dotnet new xunit
+
+--8. Запуск всех тестов 
+dotnet test

@@ -18,3 +18,8 @@ GO
 LogicalName	PhysicalName	Type	FileGroupName	Size	MaxSize	FileId	CreateLSN	DropLSN	UniqueId	ReadOnlyLSN	ReadWriteLSN	BackupSizeInBytes
 DbContractGpd_Data	E:\SQLDatabases\DbContractGpd.MDF	D	PRIMARY	18022400	35184372080640	1	0	0	05E9A4E4-C539-47E1-AA97-3C8E38967114	0	0	12124160
 DbContractGpd_Log	E:\sql_logs\DbContractGpd.LDF	L	NULL	16973824	2199023255552	2	0	0	ACC80FF8-3EC5-40E8-B81C-DF1B007BB54E	0	0	0
+
+--3. Создание резервной копии базы данных (BACKUP DATABASE)
+
+BACKUP DATABASE DbContract TO DISK = 'C:\Backups\DbContract.bak'
+GO
