@@ -63,3 +63,40 @@ print(firstDefault)
 
 Результат:
 C1
+
+--7. Работа с файлами
+
+--7.1 Добавить строчку в файл
+
+Пример 1:
+
+with open('C:\logs\datalink.log', 'a') as file:
+    file.write(f'{arguments}\n')
+	
+	
+--8. Протоколирование работы программы
+
+--8.1 модуль logging
+
+Пример 1:
+
+import logging, os
+
+logging.basicConfig(
+    handlers=[logging.FileHandler(filename = os.path.join('C:\logs', 'datalink.log'), encoding='utf-8', mode='a+')],
+    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+    level=logging.INFO)
+	
+...
+
+def GetCustomers(self, arguments) -> any:
+	try:
+
+	   #some code
+	   
+	   logging.info(f"Кол-во владельцев: {len(results)}")
+
+	   return results
+	except Exception as e:
+	   return str(e)
+
