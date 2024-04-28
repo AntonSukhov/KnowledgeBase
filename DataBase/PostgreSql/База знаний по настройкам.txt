@@ -1,0 +1,5 @@
+--1. Обновить пароль пользователя postgres
+sudo -i -u postgres
+psql
+ALTER USER postgres WITH PASSWORD 'sa';
+exit
