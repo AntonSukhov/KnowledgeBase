@@ -1,0 +1,2 @@
+--Восстановление базы данных из файла (https://postgrespro.ru/docs/postgrespro/10/app-pgrestore)
+pg_restore -U postgres -h localhost -p 5432 -W -d DbContract DbContractBackup
