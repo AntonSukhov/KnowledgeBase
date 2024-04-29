@@ -819,3 +819,30 @@ git push -u --recurse-submodules=on-demand --progress "origin" refs/heads/bugfix
 
 git update-git-for-windows
 git --version
+
+--25. Исправление ошибки cannot run ssh-askpass
+
+При выполнении команды push возникает следующая ошибка:
+git push --recurse-submodules=check --progress "origin" refs/heads/main:refs/heads/main error: cannot run ssh-askpass: Нет такого файла или каталога fatal: could not read Username for 'https://github.com': Ошибка ввода/вывода
+
+Чтобы исправить эту ошибку, вы можете попробовать использовать аутентификацию по ключу SSH вместо метода аутентификации по паролю. 
+Это позволит вам избежать проблемы с ssh-askpass. Вот как можно настроить аутентификацию по ключу SSH:
+
+1. Создайте SSH-ключ, если у вас его еще нет:
+
+ssh-keygen -t rsa -b 4096 -C "RealComrade2011@yandex.ru"
+
+2. Добавьте ваш открытый SSH-ключ в ваш аккаунт GitHub (или другого хостинга):
+
+2.1 Скопируйте содержимое вашего открытого ключа:
+
+cat ~/.ssh/id_rsa.pub
+
+2.2 Добавьте скопированный ключ в настройках вашего аккаунта на GitHub.
+
+Раздел Настройки (Settings) -> Ключи SSH и GPS (SSH and GPS keys) -> New SSH Key
+Вставить ключ в поле Key.  Заголовок (Title) можно не указывать.
+
+3. Выполнить клонирование репозитория по SSH
+
+Например, git@github.com:AntonSukhov/KnowledgeBase.git
