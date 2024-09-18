@@ -1,0 +1,10 @@
+pg_stat_statements — отслеживание статистики планирования и выполнения SQL-операторов  
+(https://postgrespro.ru/docs/postgresql/16/pgstatstatements?ysclid=lxekxq4bw5159547212)
+
+1. Получить список выполненных запросов для базы данных
+
+SELECT pss.*
+FROM pg_stat_statements AS pss 
+INNER JOIN pg_catalog.pg_database AS pd
+  ON pss.dbid = pd."oid" 
+WHERE pd.datname = 'DbExamples'

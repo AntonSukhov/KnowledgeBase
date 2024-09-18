@@ -1,0 +1,20 @@
+/*Работа с GAK с помощью утилиты gacutil*/
+
+--1. Переход к директории где находиться утилита gacutil
+
+cd C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools
+ 
+--2. Получения списка библиотек в GAK
+
+--2.1 Все библиотеки
+
+gacutil -l
+
+--2.2 Конкретная библиотека
+
+gacutil -l microsoft.extensions.caching.memory
+
+
+--3. Добавление библиотеки в GAK
+
+gacutil -i "C:\GitRepositories\I-DS-DL\develop\packages\Microsoft.Extensions.Caching.Memory.6.0.1\lib\net461\Microsoft.Extensions.Caching.Memory.dll"
