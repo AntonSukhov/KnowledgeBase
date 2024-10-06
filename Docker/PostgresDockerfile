@@ -1,0 +1,15 @@
+# Указываем базовый образ и название пользовательского образа
+FROM postgres AS postgres-image
+
+# Устанавливаем переменные окружения
+ENV POSTGRES_PASSWORD=sa
+ENV LISTEN_ADDRESSES='*'
+
+# Копируем SQL скрипты для инициализации базы данных
+COPY init.sql /docker-entrypoint-initdb.d/
+
+# Указываем путь к файлам, которые будут использоваться томом.
+VOLUME /var/lib/postgresql/data/
+
+# Указываем порт, который будет открыт
+EXPOSE 5432

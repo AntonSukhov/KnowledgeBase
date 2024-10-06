@@ -1,0 +1,36 @@
+--Создание образа из docker файла
+sudo docker build -t postgresql-image -f PostgresDockerfile /home/anton/
+
+-t postgresql-image - название образа
+-f PostgresDockerfile - название docker файла
+
+/home/anton/ - путь к каталогу где храниться docker файл
+
+--Посмотреть список созданных образов
+sudo docker images
+
+--Посмотреть список запущенных образов или работающих контейнеров.
+sudo docker ps -a
+
+--Запуск образа
+sudo docker run -p 5432:5432 -v /home/anton/Volumes/PostgreSql:/var/lib/postgresql/data --name postgresql-container postgresql-image
+
+--Удалить образ
+sudo docker rmi postgresql-image
+
+--Удалить контейнер
+sudo docker rm postgresql-container
+sudo docker rm -f postgresql-container
+-f - флаг для принудительного удаления контейнера, даже если он запущен
+
+--Остановить контейнер
+sudo docker stop postgresql-container
+
+--Запустить остановленный контейнер
+sudo docker start postgresql-container
+
+
+
+
+
+
