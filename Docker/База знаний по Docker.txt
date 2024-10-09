@@ -29,6 +29,11 @@ sudo docker stop postgresql-container
 --Запустить остановленный контейнер
 sudo docker start postgresql-container
 
+--Запустить bash в запущенном контейнере
+
+sudo docker exec -it postgresql-container bash
+
+
 
 
 
