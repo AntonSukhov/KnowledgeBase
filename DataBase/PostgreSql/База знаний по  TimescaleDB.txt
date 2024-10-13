@@ -1,0 +1,52 @@
+--1. Создание гипертаблицы
+
+--1.1 Создаём обычную таблицу
+
+CREATE TABLE conditions (
+   time        TIMESTAMPTZ       NOT NULL, --тут храниться время фиксации значений измерений
+   location    TEXT              NOT NULL,
+   temperature DOUBLE PRECISION  NULL,     --значение измерения температуры
+   humidity    DOUBLE PRECISION  NULL      --значение измерения влажности
+);
+
+--1.2 Преобразуем обычную таблицу с гипертаблицу
+
+Пример 1 - разбивка по полю time со значением chunk_time_interval по-умолчанию (7 дней)
+
+SELECT create_hypertable('conditions', by_range('time'));
+
+Пример 2 - разбивка по полю time со значением chunk_time_interval по-умолчанию (7 дней) в случае если в таблице уже есть данные
+
+SELECT create_hypertable('conditions', by_range('time'), migrate_data => true);
+
+Пример 3 - разбивка по полю time со значением chunk_time_interval = 1 день
+
+SELECT create_hypertable('conditions', by_range('time', interval '1 day'));
+
+
+
+--2 Посмотреть метаданные гипертаблицы
+
+--2.1 Информация о текущие настройки интервалов фрагментов конкретной гипертаблицы
+
+SELECT * 
+  FROM timescaledb_information.dimensions 
+  WHERE hypertable_name = 'conditions';
+
+Примечание - значение столбца time_interval, содержит значение, например, 1 day.
+
+--2.2 Информация о текущих секциях для конкретной гипертаблицы
+
+SELECT * 
+  FROM timescaledb_information.chunks 
+  WHERE hypertable_name = 'conditions';
+
+
+--3 Обновить метаданные существующей гипертаблицы
+
+--3.1 Изменить размер chunk_time_interval
+
+Пример 1
+SELECT set_chunk_time_interval('conditions', INTERVAL '24 hours');
+ 
+
