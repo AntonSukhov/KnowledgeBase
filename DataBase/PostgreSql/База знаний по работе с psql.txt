@@ -1,0 +1,14 @@
+--1. Подключение к базе данных
+
+psql -h localhost -p 5432 -U postgres -d demo
+psql -h 172.17.0.2 -p 5432 -U postgres -d demo # где 172.17.0.2 - IP машины, к которой подключаемся и это значение определено на Linux с помощью hostname -I
+
+--2. Выход из программы psql
+\q
+
+--3. Посмотреть ряд настроек
+
+SHOW config_file; # /var/lib/postgresql/data/postgresql.conf
+
+SHOW listen_addresses;
+
