@@ -67,5 +67,25 @@ host    replication     all             ::1/128                 trust
 #5) Настройка подключения с клиентской машины по адресу 192.168.1.20 для любых пользователей к любым базам данных 
 #с указанием надёжного пароля, используя метод scram-sha-256
 
-host all all 192.168.1.20 scram-sha-256
+host all all 0.0.0.0/0 scram-sha-256
+
+
+--4. Внесение изменений в параметры конфигурации сервера
+
+Восстановить значение параметров по умолчанию:
+ALTER SYSTEM RESET ALL;
+SELECT pg_reload_conf();
+
+--4.1 parallel_leader_participation
+
+parallel_leader_participation - Позволяет ведущему процессу выполнять план запроса ниже узлов Gather и Gather Merge, не ожидая рабочие процессы. 
+По умолчанию этот параметр включён (on). https://postgrespro.ru/docs/postgresql/11/runtime-config-query
+
+SHOW parallel_leader_participation
+
+ALTER parallel_leader_participation = off;
+SELECT pg_reload_conf(); #Даёт команду серверным процессам перегрузить конфигурацию
+
+
+
 
