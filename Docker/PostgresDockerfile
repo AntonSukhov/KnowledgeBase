@@ -5,6 +5,9 @@ FROM postgres AS postgres-image
 ENV POSTGRES_PASSWORD=sa
 ENV LISTEN_ADDRESSES='*'
 
+# Добавляем строчку с правилом аутентификации пользователей в файл pg_hba.conf
+RUN echo "host all all 0.0.0.0/0 scram-sha-256" >> /var/lib/postgresql/data/pg_hba.conf
+
 # Копируем SQL скрипты для инициализации базы данных
 COPY init.sql /docker-entrypoint-initdb.d/
 
