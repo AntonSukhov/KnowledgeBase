@@ -1,10 +1,10 @@
 --Создание образа из docker файла
-sudo docker build -t postgresql-image -f PostgresDockerfile /home/anton/
+sudo docker build -t postgresql-image -f PostgresDockerfile ~/
 
 -t postgresql-image - название образа
 -f PostgresDockerfile - название docker файла
 
-/home/anton/ - путь к каталогу где храниться docker файл
+~/ - путь к каталогу где храниться docker файл. Например, /home/anton/.
 
 --Посмотреть список созданных образов
 sudo docker images
@@ -13,7 +13,7 @@ sudo docker images
 sudo docker ps -a
 
 --Запуск образа
-sudo docker run -p 5432:5432 -v /home/anton/Volumes/PostgreSql:/var/lib/postgresql/data --name postgresql-container postgresql-image
+sudo docker run -p 5432:5432 -v ~/Volumes/PostgreSql:/var/lib/postgresql/data --name postgresql-container postgresql-image
 
 --Удалить образ
 sudo docker rmi postgresql-image

@@ -1,0 +1,38 @@
+1. Соединение хэшированием
+1.2 Двухпроходное соединение хэшированием
+
+Запрос:
+EXPLAIN (analyze, buffers, costs off, timing off, summary off)
+SELECT *
+FROM bookings b
+JOIN tickets t ON b.book_ref = t.book_ref;
+
+Результат:
+QUERY PLAN                                                       |
+-----------------------------------------------------------------+
+Hash Join (actual rows=366733 loops=1)                           |
+  Hash Cond: (t.book_ref = b.book_ref)                           |
+  Buffers: shared hit=1969 read=5919, temp read=5226 written=5226|
+  ->  Seq Scan on tickets t (actual rows=366733 loops=1)         |
+        Buffers: shared hit=257 read=5919                        |
+  ->  Hash (actual rows=262788 loops=1)                          |
+        Buckets: 131072  Batches: 4  Memory Usage: 4538kB        |
+        Buffers: shared hit=1712, temp written=1031              |
+        ->  Seq Scan on bookings b (actual rows=262788 loops=1)  |
+              Buffers: shared hit=1712                           |
+Planning:                                                        |
+  Buffers: shared hit=8                                          |
+
+Примечания:
+
+Buckets - кол-во корзин.
+Корзина - 
+
+Batches - кол-во пакетов. Для двухпроходного соединения хэширования значение Batches > 1.
+Пакет - это объединение n-ого кол-ва строк внутреннего (внешнего) набора данных в случае, если отведенного размера оперативной памяти (work_mem × hash_mem_multiplier, по-умолчанию 4 Мб * 2 = 8 Мб) не хватит по хэш-таблицу, заполненную этими строками.
+
+shared hit - получение блоков данных (страниц) по 8Кб каждый (далее данных) из разделяемой между всеми процессами сервера памяти. Обычно быстрое чтение данных из кэш-памяти сервера.
+shared read - медленное чтение данных с диска.
+temp read - чтение данных из временных файлов диска.
+temp written - запись данных во временные файлы диска.
+

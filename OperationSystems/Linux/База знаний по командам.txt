@@ -159,7 +159,9 @@ ls -lt --ignore='TSDBApi.xml'| grep "^-" | awk '{print $9}' | head -1
 Примеры:
 sudo cp get-pip.py /opt/libreoffice7.5/program
 
+10) Переключить работу в контекст root
 
+sudo -i
 
 
 
