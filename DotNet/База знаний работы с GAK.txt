@@ -18,3 +18,9 @@ gacutil -l microsoft.extensions.caching.memory
 --3. Добавление библиотеки в GAK
 
 gacutil -i "C:\GitRepositories\I-DS-DL\develop\packages\Microsoft.Extensions.Caching.Memory.6.0.1\lib\net461\Microsoft.Extensions.Caching.Memory.dll"
+
+--4. Удаление библиотеки из GAK
+
+gacutil -u Microsoft.Extensions.DependencyInjection, Version=5.0.0.2, Culture=neutral, PublicKeyToken=adb9793829ddae60
+gacutil /u Microsoft.Extensions.DependencyInjection, Version=5.0.0.2, Culture=neutral,PublicKeyToken=adb9793829ddae60
+
