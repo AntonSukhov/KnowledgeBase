@@ -1,0 +1,9 @@
+https://learn.microsoft.com/ru-ru/dotnet/framework/tools/sn-exe-strong-name-tool
+
+Программа строгих имен (Sn.exe) позволяет подписывать сборки строгими именами. 
+Программа Sn.exe предусматривает параметры для управления ключами, создания подписи и ее проверки.
+
+--1. Получить значение открытого ключа (PublicKeyToken) для библиотеки
+
+cd C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools 
+sn.exe -T C:\GitRepositories\I-DS-DL\develop\packages\System.ComponentModel.Annotations.5.0.0\lib\net461\System.ComponentModel.Annotations.dll
