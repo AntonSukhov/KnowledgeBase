@@ -1,0 +1,82 @@
+--Простой пример создания двух связанных таблиц и заполнения данными
+CREATE TABLE Departments 
+(
+    Id INT NOT NULL, 
+    Name VARCHAR2(200) NOT NULL,
+    CONSTRAINT Departments_Pk PRIMARY KEY (Id)
+);
+
+CREATE TABLE Employees 
+(
+    Id INT NOT NULL, 
+    Name VARCHAR2(150) NOT NULL, 
+    Surname VARCHAR2(150) NOT NULL, 
+    Patronymic VARCHAR2(150) NOT NULL, 
+    IsDepartmentHead NUMBER DEFAULT 0 NOT NULL, 
+    Birthday DATE NOT NULL, 
+    DepartmentId INT NOT NULL,
+    CONSTRAINT Employees_Pk PRIMARY KEY (Id),
+    CONSTRAINT Employees_DepartmentId_Fk FOREIGN KEY (DepartmentId) REFERENCES Departments(Id)
+);
+
+INSERT INTO Departments (Id, Name) Values (1, 'Отдел 1');
+
+INSERT INTO Departments (Id , Name)
+SELECT 2, 'Отдел 2' FROM dual
+UNION
+SELECT 3, 'Отдел 3' FROM dual
+UNION
+SELECT 4, 'Отдел 4' FROM dual
+UNION
+SELECT 5, 'Отдел 5' FROM dual;
+
+INSERT INTO Employees (Id, Name, Surname, Patronymic, IsDepartmentHead, Birthday, DepartmentId)
+SELECT 1, 'Иван', 'Васин','Петрович', 1, TO_DATE('01-12-1990', 'DD-MM-YYYY'), 1 FROM dual
+UNION
+SELECT 2, 'Антон', 'Трунин','Иванович', 0, TO_DATE('21-01-1983', 'DD-MM-YYYY'), 1 FROM dual
+UNION
+SELECT 3, 'Пётр', 'Иванов','Сергеевич', 0, TO_DATE('19-06-1981', 'DD-MM-YYYY'), 1 FROM dual
+UNION
+SELECT 4, 'Сергей', 'Таранов','Петрович', 0, TO_DATE('11-06-1987', 'DD-MM-YYYY'), 2 FROM dual
+UNION
+SELECT 5, 'Олег', 'Подбельский','Антонович', 1, TO_DATE('05-11-1993', 'DD-MM-YYYY'), 2 FROM dual
+UNION
+SELECT 6, 'Игорь', 'Антонов','Олегович', 0, TO_DATE('17-03-1989', 'DD-MM-YYYY'), 2 FROM dual
+UNION
+SELECT 7, 'Иван', 'Сергеев','Анатольевич', 1, TO_DATE('02-09-1979', 'DD-MM-YYYY'), 3 FROM dual
+UNION
+SELECT 8, 'Алексей', 'Васин','Александрович', 0, TO_DATE('28-12-1935', 'DD-MM-YYYY'), 3 FROM dual
+UNION
+SELECT 9, 'Иван', 'Никольский','Петрович', 1, TO_DATE('30-12-2001', 'DD-MM-YYYY'), 4 FROM dual
+UNION
+SELECT 10, 'Иван', 'Трунин','Петрович', 0, TO_DATE('15-12-1950', 'DD-MM-YYYY'), 4 FROM dual
+UNION
+SELECT 11, 'Иван', 'Таранов','Петрович', 1, TO_DATE('01-08-1980', 'DD-MM-YYYY'), 5 FROM dual;
+
+--Простой пример получения данных из двух таблиц
+SELECT d.Id, d.Name, Count(e.Id) AS EmployeesCount
+FROM Departments d 
+LEFT JOIN Employees e 
+   ON d.Id = e.DepartmentId
+GROUP BY d.Id, d.Name;
+
+--Пример работы с CTE
+WITH CteDepartments AS
+(
+    SELECT d.Id, 
+           d.Name
+	FROM Departments d
+),
+CteEmployees AS
+(
+    SELECT e.Id AS EmployeeId,
+           (e.Surname || ' ' || e.Name || ' ' || e.Patronymic) AS Fio,
+           e.DepartmentId
+	FROM Employees e
+)
+
+SELECT dep.Id, dep.Name, emp.EmployeeId, emp.Fio
+FROM CteDepartments dep
+INNER JOIN CteEmployees emp 
+   ON dep.Id = emp.DepartmentId;
+
