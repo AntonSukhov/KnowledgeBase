@@ -1,0 +1,3 @@
+--1. Обновление VS Code с помощью консоли Windows
+
+winget upgrade --id Microsoft.VisualStudioCode
