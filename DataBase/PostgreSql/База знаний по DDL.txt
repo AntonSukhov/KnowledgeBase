@@ -1,0 +1,37 @@
+--1 Обновление структуры таблицы
+
+--1.1 Создание внешнего ключа таблицы
+
+ALTER TABLE public.employee ADD CONSTRAINT employee_department_fk FOREIGN KEY (department_id) REFERENCES public.department(id);
+
+
+--2. Создание представления
+
+CREATE VIEW public.programmers_view
+AS SELECT id,
+    fio,
+    bithday,
+    department_id
+   FROM employee e
+  WHERE department_id = 1;
+  
+--3. Создание материализованного представления
+
+CREATE MATERIALIZED VIEW public.programmers_materialized_view
+TABLESPACE pg_default
+AS SELECT id,
+    fio,
+    bithday,
+    department_id
+   FROM employee e
+  WHERE department_id = 1
+WITH DATA;
+
+Параметр WITH DATA означает, что при создание материализованного представления происходит выполнение запроса и сохранение (материализация) его результатов.
+
+После добавления строк в таблицу employee, данные programmers_materialized_view автоматически не обновляются, поэтому нужно выполнить команду REFRESH MATERIALIZED VIEW.
+
+--3.1 Актуализация данных материализованного представления
+
+ REFRESH MATERIALIZED VIEW programmers_materialized_view ;
+

@@ -16,3 +16,27 @@ FROM  tsdb.metricinfo as mi
 where ma.metricinfoid = mi.id                       --замена Join
       AND mi.created >= '2023-04-21 00:00:00'
       AND ma.code = 'InstrumentTag'
+      
+--3. Использование виртуальных таблиц при получении данных
+
+SELECT *
+FROM 
+(
+   VALUES (1, 'department1', 'dep1'),
+          (2, 'department2', 'dep2'),
+   	  (3, 'department3', 'dep3'),
+   	  (4, 'department4', 'dep4')
+) AS d (id, name, short_name)
+INNER JOIN employee AS e 
+   ON d.id = e.department_id 
+   
+   
+--4. Работа с типам данных дата и время.
+
+SELECT current_date,
+       to_char(current_date, 'DD/MM/YYYY') AS current_date_string,
+       date_part('year', current_date) AS year1,
+       EXTRACT(YEAR FROM current_date) AS year2,
+       date_part('month', current_date) AS month1,
+       EXTRACT(MONTH FROM current_date) AS month2,
+       date_trunc('month', '2024-11-10 13:10:54'::timestamp)  --2024-11-01 00:00:00.000

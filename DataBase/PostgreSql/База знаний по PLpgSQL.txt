@@ -1,0 +1,14 @@
+--1. Добавление тестовых данных в таблицу
+
+DO $$
+DECLARE
+    i INTEGER;
+BEGIN
+    FOR i IN 1 .. 100000
+    LOOP
+
+        INSERT INTO department (id, name, short_name)
+        SELECT i, 'department'||i, 'd'||i;
+       
+    END LOOP;
+END $$;

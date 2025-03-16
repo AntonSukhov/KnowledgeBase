@@ -5,6 +5,19 @@ dotnet new sln -n WebApplication1
 dotnet new webapp --framework "net5.0" -o WebApplication1
 dotnet sln add WebApplication1 
 
+--1.1 Создание веб-приложения с последним framework, аутентификацией Individual и 
+--БД SQL Server LocalDB
+
+dotnet new webapp -n MyProjectName -au Individual --use-local-db
+
+webapp: Это шаблон, который создает проект ASP.NET Core Web App и предназначен для создания веб-приложений с использованием Razor Pages
+-n MyProjectName: Указывает имя вашего проекта.
+-au Individual: Этот параметр указывает, что вы хотите использовать аутентификацию пользователей.
+    Individual означает, что будет настроена аутентификация с использованием индивидуальных учетных записей пользователей. 
+    Это включает в себя создание необходимых страниц для регистрации, входа в систему и управления учетными записями пользователей.
+--use-local-db: Этот параметр указывает, что вы хотите использовать локальную базу данных SQL Server (LocalDB) для хранения данных. 
+
+
 --2. Создание консольного приложения 
 
 cd E:\Examples\Тесты собеседований и задания\Метанит\Code

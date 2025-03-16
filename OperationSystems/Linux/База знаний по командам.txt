@@ -159,9 +159,19 @@ ls -lt --ignore='TSDBApi.xml'| grep "^-" | awk '{print $9}' | head -1
 Примеры:
 sudo cp get-pip.py /opt/libreoffice7.5/program
 
+cd /run/timeshift/100232/backup/timeshift/snapshots
+sudo cp 2024-12-21_14-00-01.tar.xz /media/anton/Seagate/MySoft/ОС/Linux/Ubuntu/24/Снимки/
+
 10) Переключить работу в контекст root
 
 sudo -i
+
+11) Поиск файлов с указанным содержанием
+
+11.1) Утилита Grep
+
+sudo grep -r "SET statement_timeout = 0;" /home/anton/
+
 
 
 
