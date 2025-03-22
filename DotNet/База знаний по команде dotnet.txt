@@ -54,3 +54,15 @@ dotnet new xunit
 
 --8. Запуск всех тестов 
 dotnet test
+
+--9. Создание моделей БД PostgreSql с помощью scaffold
+
+--В проект установить, если не установлены
+dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL
+dotnet add package Microsoft.EntityFrameworkCore.Design
+dotnet add package Microsoft.EntityFrameworkCore.Tools
+
+dotnet ef dbcontext scaffold "Host=172.17.0.2;Database=DbAccounts;Username=postgres;Password=sa" Npgsql.EntityFrameworkCore.PostgreSQL -o EntityF
+ramework/Models
+
+-o EntityFramework/Models - папка где создадуться классы моделей БД.

@@ -55,16 +55,9 @@ gedit ~/.bash_profile             Открываем файл на редакт�
 
 dotnet --version                  Проверяем получение версии dotnet								  
 	
-2.1.3) Установка с помощью apt-get
+2.1.3) Установка с помощью apt-get (приоритетный способ)
 
-wget https://packages.microsoft.com/config/debian/11/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-
-sudo dpkg -i packages-microsoft-prod.deb
-
-rm packages-microsoft-prod.deb
-
-sudo apt-get update;
-sudo apt-get install -y dotnet-sdk-6.0
+sudo apt install dotnet-sdk-9.0 
 
 2.2) Удаление dotnet
 
