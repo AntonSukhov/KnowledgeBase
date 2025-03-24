@@ -66,3 +66,25 @@ dotnet ef dbcontext scaffold "Host=172.17.0.2;Database=DbAccounts;Username=postg
 ramework/Models
 
 -o EntityFramework/Models - папка где создадуться классы моделей БД.
+
+--10. Генерация страницы регистрации с помощью .NET CLI
+
+dotnet aspnet-codegenerator identity -dc IndentityWebApp.Data.ApplicationDbContext --files "Account.Register" --force
+
+identity - Указывает, что вы хотите сгенерировать код для системы идентификации (Identity) в ASP.NET Core.
+
+-dc (или --data-context): Указывает контекст базы данных, который будет использоваться для работы с данными. 
+В данном случае, это IndentityWebApp.Data.ApplicationDbContext, что подразумевает, что у вас есть класс контекста базы данных, который управляет доступом к данным в приложении.
+
+--files: Указывает, какие файлы или страницы вы хотите сгенерировать. 
+В данном случае, "Account.Register" означает, что будет сгенерирована страница регистрации пользователей. 
+Вы можете указать и другие файлы, такие как Account.Login, Account.Logout и т.д., если хотите сгенерировать их одновременно.
+
+--force: Перезаписывает существующие файлы, если они уже существуют.
+
+
+
+--11. Получить информацию о команде генерации объектов с помощью .NET CLI
+
+dotnet aspnet-codegenerator identity -h
+
