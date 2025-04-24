@@ -79,4 +79,234 @@ SELECT dep.Id, dep.Name, emp.EmployeeId, emp.Fio
 FROM CteDepartments dep
 INNER JOIN CteEmployees emp 
    ON dep.Id = emp.DepartmentId;
+   
+/*Информация об объектах БД (dba_source)*/
 
+SELECT *
+FROM dba_source
+WHERE TYPE = 'PROCEDURE'
+		AND NAME  ='EXEC_SQL';
+		
+/*Информация об изменениях в объектах БД (dba_audit_trail)*/
+
+SELECT *
+FROM dba_audit_trail 
+WHERE obj_name = 'MyPacTest'
+ORDER BY TIMESTAMP;
+
+/*Информация об изменениях в объектах БД с внесенным кодом(t_audit и t_audit_sql_text)*/
+
+SELECT a.event_datetime, 
+       a.OS_USER, 
+       a.HOST, 
+       a.LOGIN_USER, 
+       a.OBJECT_OWNER, 
+       a.OBJECT_NAME, 
+       a.OBJECT_TYPE,
+       a.SYSEVENT, 
+       ast.sql_text 
+FROM  SU.t_audit a
+INNER JOIN SU.t_audit_sql_text ast 
+     ON ast.audit_id = a.id
+WHERE a.event_datetime > sysdate - 300000 AND 
+    --a.object_owner = 'Owner_Name' AND 
+      a.object_name = 'MyPacTest'
+
+/*Объединения данных из одной таблицы с данными в другой таблице (MERGE)*/
+
+--Мы хотим обновить зарплаты сотрудников в таблице EMPLOYEES на основе данных из таблицы PAYROLLS. 
+--Если сотрудник из PAYROLLS не существует в EMPLOYEES, мы хотим добавить его.
+
+--Простой пример:
+
+MERGE INTO EMPLOYEES e
+USING PAYROLLS p
+	ON (e.ID = p.EMPLOYEE_ID)
+WHEN MATCHED THEN
+    UPDATE SET e.SALARY = p.SALARY
+WHEN NOT MATCHED THEN
+    INSERT (ID, NAME, DEPARTMENT_ID, SALARY)
+    VALUES (p.EMPLOYEE_ID, 'Сотрудник' || p.EMPLOYEE_ID, 1, p.SALARY);
+	
+/*Преобразования строковых данных в столбцы, что позволяет более удобно представлять данные в отчетах (PIVOT)*/
+
+--Простой пример:
+
+Таблица sales:
+
+PRODUCT|MONTH|AMOUNT|
+-------+-----+------+
+Apples |Jan  |   100|
+Apples |Feb  |   150|
+Oranges|Jan  |   250|
+Oranges|Feb  |   200|
+Bananas|Jan  |   350|
+Bananas|Feb  |   190|
+
+SELECT *
+FROM SALES
+PIVOT (
+
+    SUM(amount) 
+
+    FOR month IN ('Jan' AS January, 'Feb' AS February)
+
+);
+
+PRODUCT|JANUARY|FEBRUARY|
+-------+-------+--------+
+Bananas|    350|     190|
+Apples |    100|     150|
+Oranges|    250|     200|
+
+
+--Значение параметра БД или таблицы (v$parameter)
+
+SELECT *
+FROM v$parameter
+
+/*Оконные функции*/
+
+--Максимальная зарплата сотрудников (MAX)
+ 
+ -- С помощью оконной функции
+ 
+SELECT e.ID , e.NAME, e.DEPARTMENT_ID, e.HIRE_DATE,  
+       MAX(e.SALARY) OVER() AS SALARY_MAX
+FROM EMPLOYEES e; 
+
+ID|NAME       |DEPARTMENT_ID|HIRE_DATE                    |SALARY_MAX|
+--+-----------+-------------+-----------------------------+----------+
+10|Сотрудник10|            1|2025-03-01 00:00:00.000 +0300|    300000|
+ 4|Андрей     |            3|2025-02-01 00:00:00.000 +0300|    300000|
+ 5|Александр  |            1|2025-01-01 00:00:00.000 +0300|    300000|
+ 6|Олег       |            1|2024-12-12 00:00:00.000 +0300|    300000|
+ 1|Иван       |            1|2025-03-01 00:00:00.000 +0300|    300000|
+ 2|Пётр       |            1|2025-03-01 00:00:00.000 +0300|    300000|
+ 3|Антон      |            2|2025-03-01 00:00:00.000 +0300|    300000|
+ 
+ Мы применяем оконную функцию over(). 
+ Используем её для получения максимальной зарплаты по всей организации, так как не указаны размеры “окна”. 
+ Over() с пустыми скобками применяется для всей выборки. 
+ Поэтому везде максимальная зарплата — 300 000. 
+ Результат действия оконной функции добавляется к каждой строчке. 
+ 
+ 
+ --Без оконной функции
+ 
+WITH Cte AS
+(SELECT MAX(e.SALARY) AS SALARY_MAX
+FROM EMPLOYEES e)
+SELECT e.ID , e.NAME, e.DEPARTMENT_ID, e.HIRE_DATE, Cte.SALARY_MAX
+FROM EMPLOYEES e
+CROSS JOIN Cte;
+
+ID|NAME       |DEPARTMENT_ID|HIRE_DATE                    |SALARY_MAX|
+--+-----------+-------------+-----------------------------+----------+
+10|Сотрудник10|            1|2025-03-01 00:00:00.000 +0300|    300000|
+ 4|Андрей     |            3|2025-02-01 00:00:00.000 +0300|    300000|
+ 5|Александр  |            1|2025-01-01 00:00:00.000 +0300|    300000|
+ 6|Олег       |            1|2024-12-12 00:00:00.000 +0300|    300000|
+ 1|Иван       |            1|2025-03-01 00:00:00.000 +0300|    300000|
+ 2|Пётр       |            1|2025-03-01 00:00:00.000 +0300|    300000|
+ 3|Антон      |            2|2025-03-01 00:00:00.000 +0300|    300000|
+
+
+--Максимальная зарплата сотрудников в рамках отдела (MAX и PARTITION BY)
+
+SELECT e.ID , e.NAME, e.DEPARTMENT_ID, e.HIRE_DATE,  
+       MAX(e.SALARY) OVER(PARTITION BY e.DEPARTMENT_ID) AS SALARY_MAX
+FROM EMPLOYEES e; 
+
+ID|NAME       |DEPARTMENT_ID|HIRE_DATE                    |SALARY_MAX|
+--+-----------+-------------+-----------------------------+----------+
+10|Сотрудник10|            1|2025-03-01 00:00:00.000 +0300|    255000|
+ 6|Олег       |            1|2024-12-12 00:00:00.000 +0300|    255000|
+ 2|Пётр       |            1|2025-03-01 00:00:00.000 +0300|    255000|
+ 5|Александр  |            1|2025-01-01 00:00:00.000 +0300|    255000|
+ 1|Иван       |            1|2025-03-01 00:00:00.000 +0300|    255000|
+ 3|Антон      |            2|2025-03-01 00:00:00.000 +0300|    300000|
+ 4|Андрей     |            3|2025-02-01 00:00:00.000 +0300|    255000|
+ 
+ Мы использовали PARTITION BY, которое позволило задать размеры нашего окна. 
+
+
+--Кол-во строк к группе (COUNT и PARTITION BY)
+
+SELECT  DISTINCT e.department_id, 
+                 d.NAME AS DEPARTMENT_NAME,
+                 COUNT(e.id) OVER (PARTITION BY e.department_id) AS employees_count
+FROM 
+    employees e
+INNER JOIN DEPARTMENTS d 
+   ON e.DEPARTMENT_ID = d.ID
+ ORDER BY e.department_id;
+ 
+ DEPARTMENT_ID|DEPARTMENT_NAME    |EMPLOYEES_COUNT|
+-------------+-------------------+---------------+
+            1|Отдел разработки   |              5|
+            2|Отдел сопровождения|              1|
+            3|Отдел бухгалтерии  |              1|
+   
+   
+PARTITION BY e.department_id для каждой строки выборки создает "окно" (или группу) в которое входят строки с одинаковыми значениями department_id и 
+для них выполняется функция COUNT(e.id)
+   
+   
+--Ранжирование строк (RANK)
+
+--Функция RANK() в Oracle используется для присвоения рангов строкам в наборе данных на основе значений в определенном столбце. 
+--Если несколько строк имеют одинаковые значения, они получают одинаковый ранг, и следующий ранг пропускается.
+
+ID|NAME       |DEPARTMENT_ID|SALARY|
+--+-----------+-------------+------+
+10|Сотрудник10|            1|100000|
+ 4|Андрей     |            3|255000|
+ 1|Иван       |            1|255000|
+ 2|Пётр       |            1|150000|
+ 3|Антон      |            2|300000|
+ 5|Александр  |            1|255000|
+ 6|Олег       |            1|150000|
+ 
+ 
+SELECT  e.ID,
+        e.Name,
+        e.SALARY,
+        RANK() OVER(ORDER BY SALARY) AS SALARY_RANK
+		--,ROW_NUMBER() OVER(ORDER BY SALARY) AS ROW_NUMBER
+FROM 
+    employees e
+	
+ID|NAME       |SALARY|SALARY_RANK|
+--+-----------+------+-----------+
+10|Сотрудник10|100000|          1|    1
+ 6|Олег       |150000|          2|    2
+ 2|Пётр       |150000|          2|    3 <--- заменяется на 2
+ 1|Иван       |255000|          4|    4
+ 5|Александр  |255000|          4|    5 <--- заменяется на 4
+ 4|Андрей     |255000|          4|    6 <--- заменяется на 4
+ 3|Антон      |300000|          7|    7
+ 
+ 
+--Средняя зарплата сотрудников отдела (AVG)
+
+SELECT d.ID,
+       d.NAME,
+       e.NAME AS EMPLOYEE_NAME,
+       e.HIRE_DATE,
+       e.SALARY,
+       AVG(e.SALARY) OVER(PARTITION BY d.ID) AS AVG_SALARY_BY_DEPARTMENT
+FROM DEPARTMENTS d 
+   INNER JOIN EMPLOYEES e 
+      ON d.ID = e.DEPARTMENT_ID
+	  
+ID|NAME               |EMPLOYEE_NAME|HIRE_DATE                    |SALARY|AVG_SALARY_BY_DEPARTMENT|
+--+-------------------+-------------+-----------------------------+------+------------------------+
+ 1|Отдел разработки   |Сотрудник10  |2025-03-01 00:00:00.000 +0300|100000|                  182000|
+ 1|Отдел разработки   |Олег         |2024-12-12 00:00:00.000 +0300|150000|                  182000|
+ 1|Отдел разработки   |Пётр         |2025-03-01 00:00:00.000 +0300|150000|                  182000|
+ 1|Отдел разработки   |Александр    |2025-01-01 00:00:00.000 +0300|255000|                  182000|
+ 1|Отдел разработки   |Иван         |2025-03-01 00:00:00.000 +0300|255000|                  182000|
+ 2|Отдел сопровождения|Антон        |2025-03-01 00:00:00.000 +0300|300000|                  300000|
+ 3|Отдел бухгалтерии  |Андрей       |2025-02-01 00:00:00.000 +0300|255000|                  255000|
+ 
