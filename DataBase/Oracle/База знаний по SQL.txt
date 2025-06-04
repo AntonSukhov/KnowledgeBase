@@ -94,6 +94,19 @@ FROM dba_audit_trail
 WHERE obj_name = 'MyPacTest'
 ORDER BY TIMESTAMP;
 
+/*Информация о последовательности (all_sequences)*/
+
+SELECT *
+FROM all_sequences 
+WHERE SEQUENCE_OWNER = 'MY_SCHEMA'
+      AND SEQUENCE_NAME = 'SEQ$CUSTOMER$ID'
+
+/*Информация о таблице (all_tables)*/  
+SELECT *
+FROM all_tables 
+WHERE OWNER = 'MY_SCHEMA'
+      AND TABLE_NAME = 'CUSTOMERS'
+
 /*Информация об изменениях в объектах БД с внесенным кодом(t_audit и t_audit_sql_text)*/
 
 SELECT a.event_datetime, 
