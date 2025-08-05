@@ -86,6 +86,16 @@ SELECT *
 FROM dba_source
 WHERE TYPE = 'PROCEDURE'
 		AND NAME  ='EXEC_SQL';
+	
+
+/*Информация о функция БД (all_objects)*/	
+SELECT 
+    *
+FROM 
+    all_objects 
+WHERE 
+    object_type = 'FUNCTION' 
+    AND object_name LIKE 'F$GETKOD%'
 		
 /*Информация об изменениях в объектах БД (dba_audit_trail)*/
 
@@ -106,6 +116,13 @@ SELECT *
 FROM all_tables 
 WHERE OWNER = 'MY_SCHEMA'
       AND TABLE_NAME = 'CUSTOMERS'
+	 
+/*Информация о индексе (dba_indexes)*/ 	 
+SELECT index_name, last_analyzed
+FROM dba_indexes
+ WHERE TABLE_NAME = 'TABLE_NAME'
+        AND index_name = 'INDEX_NAME';	  
+	  
 
 /*Информация об изменениях в объектах БД с внесенным кодом(t_audit и t_audit_sql_text)*/
 
