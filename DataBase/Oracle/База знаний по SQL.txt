@@ -340,3 +340,96 @@ ID|NAME               |EMPLOYEE_NAME|HIRE_DATE                    |SALARY|AVG_SA
  2|Отдел сопровождения|Антон        |2025-03-01 00:00:00.000 +0300|300000|                  300000|
  3|Отдел бухгалтерии  |Андрей       |2025-02-01 00:00:00.000 +0300|255000|                  255000|
  
+ 
+--Получить список всех прав для указанного пользователя
+
+SELECT *
+FROM (
+    SELECT GRANTEE AS USERNAME,
+           GRANTED_ROLE AS PRIVILEGE,
+           '--' AS OWNER,
+           '--' AS TABLENAME,
+           '--' AS COLUMN_NAME,
+           ADMIN_OPTION,
+           'ROLE' AS ACCESS_TYPE
+    FROM DBA_ROLE_PRIVS
+    WHERE GRANTEE = UPPER('user_name')
+    
+    UNION
+    
+    SELECT GRANTEE AS USERNAME,
+           PRIVILEGE,
+           '--' AS OWNER,
+           '--' AS TABLENAME,
+           '--' AS COLUMN_NAME,
+           ADMIN_OPTION,
+           'SYSTEM' AS ACCESS_TYPE
+    FROM DBA_SYS_PRIVS
+    WHERE GRANTEE = UPPER('user_name')
+    
+    UNION
+    
+    SELECT GRANTEE AS USERNAME,
+           PRIVILEGE,
+           OWNER,
+           TABLE_NAME AS TABLENAME,
+           '--' AS COLUMN_NAME,
+           GRANTABLE AS ADMIN_OPTION,
+           'TABLE' AS ACCESS_TYPE
+    FROM DBA_TAB_PRIVS
+    WHERE GRANTEE = UPPER('user_name')
+    
+    UNION
+    
+    SELECT DP.GRANTEE AS USERNAME,
+           PRIVILEGE,
+           OWNER,
+           TABLE_NAME AS TABLENAME,
+           COLUMN_NAME,
+           '--' AS ADMIN_OPTION,
+           'ROLE' AS ACCESS_TYPE
+    FROM ROLE_TAB_PRIVS RP, DBA_ROLE_PRIVS DP
+    WHERE RP.ROLE = DP.GRANTED_ROLE
+      AND DP.GRANTEE = UPPER('user_name')
+    
+    UNION
+    
+    SELECT GRANTEE AS USERNAME,
+           PRIVILEGE,
+           GRANTABLE AS ADMIN_OPTION,
+           OWNER,
+           TABLE_NAME AS TABLENAME,
+           COLUMN_NAME,
+           'COLUMN' AS ACCESS_TYPE
+    FROM DBA_COL_PRIVS
+    WHERE GRANTEE = UPPER('user_name')
+) A
+ORDER BY USERNAME,
+         A.TABLENAME,
+         CASE
+             WHEN A.ACCESS_TYPE = 'SYSTEM' THEN 1
+             WHEN A.ACCESS_TYPE = 'TABLE' THEN 2
+             WHEN A.ACCESS_TYPE = 'COLUMN' THEN 3
+             WHEN A.ACCESS_TYPE = 'ROLE' THEN 4
+             ELSE 5
+         END,
+         CASE
+             WHEN A.PRIVILEGE IN ('EXECUTE') THEN 1
+             WHEN A.PRIVILEGE IN ('SELECT', 'INSERT', 'DELETE') THEN 3
+             ELSE 2
+         END,
+         A.COLUMN_NAME,
+         A.PRIVILEGE;
+		 
+--Отображение информации в консоли DBMS_OUTPUT.PUT_LINE
+
+-- Включаем вывод
+SET SERVEROUTPUT ON;
+
+-- PL/SQL-блок
+DECLARE
+    my_variable NUMBER := 42;  -- Объявляем и инициализируем переменную
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('Значение переменной: ' || my_variable);
+END;
+/
