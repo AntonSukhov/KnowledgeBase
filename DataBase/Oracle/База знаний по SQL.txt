@@ -433,3 +433,142 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE('Значение переменной: ' || my_variable);
 END;
 /
+
+/*Работа с JSON*/
+
+--Для примеров нужно выполнить следующие команды
+
+CREATE TABLE TEST.JSON_EXAMPLES (
+	ID INTEGER NOT NULL,
+	JSON_DATA VARCHAR2(4000) NOT NULL,
+	CONSTRAINT JSON_EXAMPLES_ID_PK PRIMARY KEY (ID)
+);
+
+INSERT INTO TEST.JSON_EXAMPLES (ID, JSON_DATA) 
+VALUES(1, '{"departments":[{"name":"ИТ","начальник":"Иванов Иван Иванович","employees":[{"id":1,"name":"Сидоров Петр Петрович","position":"Ведущий разработчик","salary":250000},{"id":2,"name":"Короткова Елена Ивановна","position":"Тестировщик","salary":100000}]},{"name":"HR","начальник":"Динисова Ольга Николаевна","employees":[{"id":3,"name":"Туманов Антон Григорьевич","position":"HR специалист","salary":160000}]}]}');
+
+--1. Базовое извлечение: Простые скалярные значения (JSON_VALUE)
+
+-- Пример 1: Извлечение названия первого отдела
+SELECT 
+    ID,
+    JSON_VALUE(JSON_DATA, '$.departments[0].name') AS department_name
+FROM TEST.JSON_EXAMPLES
+WHERE ID = 1;
+
+-- Пример 2: Извлечение зарплаты первого сотрудника в первом отделе
+SELECT 
+    ID,
+    JSON_VALUE(JSON_DATA, '$.departments[0].employees[0].salary') AS employee_salary
+FROM TEST.JSON_EXAMPLES
+WHERE ID = 1;
+
+Примечания:
+    - Пути используют синтаксис JSONPath (например, $ — корень, [0] — первый элемент массива).
+    - Если путь не существует, возвращается NULL (используйте клаузу RETURNING для обработки ошибок, например, ERROR ON ERROR).
+	
+--2. "Расплющивание" JSON: Использование JSON_TABLE для табличных результатов 
+
+--Пример 1: Извлечение всех сотрудников из всех отделов 
+
+SELECT jt.*   
+FROM TEST.JSON_EXAMPLES t,
+     JSON_TABLE
+     (
+         t.JSON_DATA,
+         '$.departments.employees[*]'
+         COLUMNS (
+             EMPLOYEE_ID VARCHAR2(100) PATH '$.id',
+             EMPLOYEE_NAME VARCHAR2(2000) PATH '$.name',
+             EMPLOYEE_POSITION VARCHAR2(2000) PATH '$.position',
+             EMPLOYEE_SALARY  VARCHAR2(100) PATH '$.salary'
+             
+         )
+     ) jt
+	 
+--Пример 2: Извлечение всех отделов
+
+SELECT jt.*
+FROM TEST.JSON_EXAMPLES t,
+     JSON_TABLE
+     (
+         t.JSON_DATA,
+         '$.departments[*]'
+         COLUMNS (
+             DEPARTMENT_NAME VARCHAR2(2000) PATH '$.name',
+             MANAGER VARCHAR2(2000) PATH '$.manager'
+            
+         )
+     ) jt
+	 
+--Пример 3: Извлечение всех отделов и их сотрудников (большая плоская таблица).
+
+SELECT jt.*
+FROM TAXFL_TEST.JSON_EXAMPLES t,
+     JSON_TABLE
+     (
+         t.JSON_DATA,
+         '$.departments[*]'
+         COLUMNS (
+             DEPARTMENT_NAME VARCHAR2(2000) PATH '$.name',
+             MANAGER VARCHAR2(2000) PATH '$.manager',
+             NESTED PATH '$.employees[*]'
+             COLUMNS (
+	             EMPLOYEE_ID VARCHAR2(100) PATH '$.id',
+	             EMPLOYEE_NAME VARCHAR2(2000) PATH '$.name',
+	             EMPLOYEE_POSITION VARCHAR2(2000) PATH '$.position',
+	             EMPLOYEE_SALARY  VARCHAR2(100) PATH '$.salary'
+         	) 
+         )
+     ) jt
+	 
+-- 3. Фильтрация данных
+
+--Пример 1: Фильтрация после разбора JSON
+
+SELECT jt.*
+FROM TAXFL_TEST.JSON_EXAMPLES t,
+     JSON_TABLE
+     (
+         t.JSON_DATA,
+         '$.departments[*]'
+         COLUMNS (
+             DEPARTMENT_NAME VARCHAR2(2000) PATH '$.name',
+             MANAGER VARCHAR2(2000) PATH '$.manager',
+             NESTED PATH '$.employees[*]'
+             COLUMNS (
+	             EMPLOYEE_ID VARCHAR2(100) PATH '$.id',
+	             EMPLOYEE_NAME VARCHAR2(2000) PATH '$.name',
+	             EMPLOYEE_POSITION VARCHAR2(2000) PATH '$.position',
+	             EMPLOYEE_SALARY  VARCHAR2(100) PATH '$.salary'
+         	) 
+         )
+     ) jt
+ WHERE jt.DEPARTMENT_NAME = 'ИТ'
+ 
+--Пример 2: Фильтрация перед разбором JSON (json_exists)
+ 
+SELECT jt.*
+FROM 
+(
+	SELECT t.*
+	FROM TAXFL_TEST.JSON_EXAMPLES t
+	  WHERE json_exists(t.JSON_DATA ,
+	                    '$?(@.departments.name == "ИТ")')
+) r,
+ JSON_TABLE
+ (
+     r.JSON_DATA,
+     '$.departments[*]'
+     COLUMNS (
+         DEPARTMENT_NAME VARCHAR2(2000) PATH '$.name',
+         MANAGER VARCHAR2(2000) PATH '$.manager',
+         NESTED PATH '$.employees[*]'
+         COLUMNS (
+             EMPLOYEE_ID VARCHAR2(100) PATH '$.id',
+             EMPLOYEE_NAME VARCHAR2(2000) PATH '$.name',
+             EMPLOYEE_POSITION VARCHAR2(2000) PATH '$.position',
+             EMPLOYEE_SALARY  VARCHAR2(100) PATH '$.salary'
+     	) 
+     )
+ ) jt
