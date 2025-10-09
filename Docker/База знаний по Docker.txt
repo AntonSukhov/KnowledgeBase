@@ -1,5 +1,6 @@
 --Создание образа из docker файла
 sudo docker build -t postgresql-image -f PostgresDockerfile ~/
+sudo docker build -t mssql-image -f MsSqlServerDockerfile ~/
 
 -t postgresql-image - название образа
 -f PostgresDockerfile - название docker файла
@@ -14,24 +15,31 @@ sudo docker ps -a
 
 --Запуск образа
 sudo docker run -p 5432:5432 -v ~/Volumes/PostgreSql:/var/lib/postgresql/data --name postgresql-container postgresql-image
+sudo docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=passworD142@" -p 1433:1433 -v ~/Volumes/MsSql:/var/opt/mssql -d --name mssql-container mssql-image
 
 --Удалить образ
 sudo docker rmi postgresql-image
+sudo docker rmi mssql-image
 
 --Удалить контейнер
 sudo docker rm postgresql-container
 sudo docker rm -f postgresql-container
+sudo docker rm mssql-container
+sudo docker rm -f mssql-container
 -f - флаг для принудительного удаления контейнера, даже если он запущен
 
 --Остановить контейнер
 sudo docker stop postgresql-container
+sudo docker stop mssql-container
 
 --Запустить остановленный контейнер
 sudo docker start postgresql-container
+sudo docker start mssql-container
 
 --Запустить bash в запущенном контейнере
 
 sudo docker exec -it postgresql-container bash
+sudo docker exec -it mssql-container bash
 
 
 
