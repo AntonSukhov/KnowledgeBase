@@ -147,7 +147,7 @@ WHERE a.event_datetime > sysdate - 300000 AND
 --Мы хотим обновить зарплаты сотрудников в таблице EMPLOYEES на основе данных из таблицы PAYROLLS. 
 --Если сотрудник из PAYROLLS не существует в EMPLOYEES, мы хотим добавить его.
 
---Простой пример:
+--Простой пример 1:
 
 MERGE INTO EMPLOYEES e
 USING PAYROLLS p
@@ -522,6 +522,24 @@ FROM TAXFL_TEST.JSON_EXAMPLES t,
          )
      ) jt
 	 
+--Пример 4:
+
+SELECT 
+    jt."Id",
+    jt."Description"
+FROM (
+    SELECT '[{"Id":1,"Description":"Описание 1"},{"Id":2,"Description":"Описание 2"}]' AS json_str
+    FROM dual
+) t,
+JSON_TABLE(
+    t.json_str,
+    '$[*]'  -- путь к каждому элементу массива
+    COLUMNS (
+        "Id" NUMBER(10) PATH '$.Id',
+        "Description" VARCHAR2(250) PATH '$.Description'
+    )
+) jt;	 
+	 
 -- 3. Фильтрация данных
 
 --Пример 1: Фильтрация после разбора JSON
@@ -572,3 +590,26 @@ FROM
      	) 
      )
  ) jt
+ 
+-- 4. Формирование строки JSON по выборке
+
+SELECT JSON_OBJECT(
+    'Id'         VALUE 1,
+    'CreateDate' VALUE TO_DATE('2024.05.01','YYYY.MM.DD'),
+	'DeleteDate' VALUE NULL
+) AS json_row
+FROM dual; 
+ 
+/* Работа с датами*/
+ 
+ -- Получение даты из строки (TO_DATE)
+ 
+ SELECT TO_DATE('2023-10-15', 'YYYY-MM-DD') AS my_date, 
+        TO_DATE('2023-10-15 13:04:12', 'YYYY-MM-DD HH24:MI:SS') AS my_datetime
+ FROM dual;
+ 
+ 
+/* Работа с правами доступа */
+ 
+grant execute on CUSTOM_PROCEDURE_NAME to CURRENT_SCHEMA_NAME with grant option;        -- доступ на вызов пользовательской хранимой процедуры (CUSTOM_PROCEDURE_NAME) из схемы (CURRENT_SCHEMA_NAME)
+grant select on REMOTE_SCHEMA_NAME.TABLE_NAME to CURRENT_SCHEMA_NAME with grant option; -- доступ на выбор из чужой схемы (REMOTE_SCHEMA_NAME) таблицы (TABLE_NAME) из схемы (CURRENT_SCHEMA_NAME)
