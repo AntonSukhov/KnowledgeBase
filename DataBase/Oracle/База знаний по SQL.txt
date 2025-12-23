@@ -141,6 +141,7 @@ INNER JOIN SU.t_audit_sql_text ast
 WHERE a.event_datetime > sysdate - 300000 AND 
     --a.object_owner = 'Owner_Name' AND 
       a.object_name = 'MyPacTest'
+ORDER BY a.event_datetime DESC
 
 /*Объединения данных из одной таблицы с данными в другой таблице (MERGE)*/
 
@@ -613,3 +614,52 @@ FROM dual;
  
 grant execute on CUSTOM_PROCEDURE_NAME to CURRENT_SCHEMA_NAME with grant option;        -- доступ на вызов пользовательской хранимой процедуры (CUSTOM_PROCEDURE_NAME) из схемы (CURRENT_SCHEMA_NAME)
 grant select on REMOTE_SCHEMA_NAME.TABLE_NAME to CURRENT_SCHEMA_NAME with grant option; -- доступ на выбор из чужой схемы (REMOTE_SCHEMA_NAME) таблицы (TABLE_NAME) из схемы (CURRENT_SCHEMA_NAME)
+
+/* Работа с коллекцией элементов пользовательского типа*/
+
+--1. Создать пользовательский тип
+
+CREATE TYPE MyShema.Department AS OBJECT (
+    id NUMBER,
+    name VARCHAR2(500)
+);
+
+--2. Создаем тип коллекции
+
+CREATE TYPE MyShema.Departments AS TABLE OF MyShema.Department;
+
+--3. Создаем саму хранимую процедуру
+
+CREATE OR REPLACE PROCEDURE MyShema.Get_Departments(
+    departments OUT MyShema.Departments
+) AS
+BEGIN
+    -- Непосредственный SELECT с BULK COLLECT
+    SELECT 
+        MyShema.Department(t.id, t.name)
+    BULK COLLECT INTO departments
+    FROM Departments t;
+	
+    -- Если данных нет, коллекция будет пустой автоматически
+    -- Дополнительная проверка не требуется
+    
+END MyShema.Get_Departments;
+
+--4. Вызов процедуры и получение данных
+
+DECLARE
+     t_departments MyShema.Departments;
+BEGIN
+	MyShema.Get_DepartmentsS(
+        departments => t_departments
+    );
+	
+    IF t_departments.COUNT > 0 THEN
+        FOR i IN 1..t_departments.COUNT LOOP
+            DBMS_OUTPUT.PUT_LINE('ID: ' || t_departments(i).Id || ', Name: ' || t_departments(i).Name);
+        END LOOP;
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Данных не найдено');
+    END IF;
+
+END;
