@@ -1,4 +1,4 @@
---Простой пример создания двух связанных таблиц и заполнения данными
+/* Cоздание связанных таблиц*/
 CREATE TABLE Departments 
 (
     Id INT NOT NULL, 
@@ -19,6 +19,7 @@ CREATE TABLE Employees
     CONSTRAINT Employees_DepartmentId_Fk FOREIGN KEY (DepartmentId) REFERENCES Departments(Id)
 );
 
+/* Заполнение связанных таблиц данными*/
 INSERT INTO Departments (Id, Name) Values (1, 'Отдел 1');
 
 INSERT INTO Departments (Id , Name)
@@ -53,14 +54,14 @@ SELECT 10, 'Иван', 'Трунин','Петрович', 0, TO_DATE('15-12-1950
 UNION
 SELECT 11, 'Иван', 'Таранов','Петрович', 1, TO_DATE('01-08-1980', 'DD-MM-YYYY'), 5 FROM dual;
 
---Простой пример получения данных из двух таблиц
+/* Получение данных из двух таблиц*/
 SELECT d.Id, d.Name, Count(e.Id) AS EmployeesCount
 FROM Departments d 
 LEFT JOIN Employees e 
    ON d.Id = e.DepartmentId
 GROUP BY d.Id, d.Name;
 
---Пример работы с CTE
+/* Работа с CTE */
 WITH CteDepartments AS
 (
     SELECT d.Id, 
@@ -342,7 +343,7 @@ ID|NAME               |EMPLOYEE_NAME|HIRE_DATE                    |SALARY|AVG_SA
  3|Отдел бухгалтерии  |Андрей       |2025-02-01 00:00:00.000 +0300|255000|                  255000|
  
  
---Получить список всех прав для указанного пользователя
+/*Получить список всех прав для указанного пользователя*/
 
 SELECT *
 FROM (
@@ -422,7 +423,7 @@ ORDER BY USERNAME,
          A.COLUMN_NAME,
          A.PRIVILEGE;
 		 
---Отображение информации в консоли DBMS_OUTPUT.PUT_LINE
+/*Отображение информации в консоли DBMS_OUTPUT.PUT_LINE*/
 
 -- Включаем вывод
 SET SERVEROUTPUT ON;
