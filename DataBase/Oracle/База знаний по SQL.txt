@@ -614,6 +614,7 @@ FROM dual;
 /* Работа с правами доступа */
  
 grant execute on CUSTOM_PROCEDURE_NAME to CURRENT_SCHEMA_NAME with grant option;        -- доступ на вызов пользовательской хранимой процедуры (CUSTOM_PROCEDURE_NAME) из схемы (CURRENT_SCHEMA_NAME)
+grant execute on function schema_name.function_name to target_schema with grant option; -- доступ на вызов пользовательской функции
 grant select on REMOTE_SCHEMA_NAME.TABLE_NAME to CURRENT_SCHEMA_NAME with grant option; -- доступ на выбор из чужой схемы (REMOTE_SCHEMA_NAME) таблицы (TABLE_NAME) из схемы (CURRENT_SCHEMA_NAME)
 
 /* Работа с коллекцией элементов пользовательского типа*/
