@@ -81,6 +81,49 @@ FROM CteDepartments dep
 INNER JOIN CteEmployees emp 
    ON dep.Id = emp.DepartmentId;
    
+--CTE и MERGE
+
+MERGE INTO products_target target
+USING 
+(  WITH cleaned_source AS (
+		SELECT 
+			product_id,
+			product_name,
+			price,
+			category
+		FROM products_source
+		WHERE price > 0  -- фильтруем некорректные цены
+		-- убираем дубли, оставляя самую свежую запись
+		QUALIFY ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY last_updated DESC) = 1
+   )
+   SELECT *
+   from cleaned_source
+) source
+    ON target.product_id = source.product_id  -- ключ соединения
+WHEN MATCHED THEN  -- если товар найден в целевой таблице
+    UPDATE SET
+        target.product_name = source.product_name,
+        target.price = source.price,
+        target.category = source.category,
+        target.last_updated = CURRENT_TIMESTAMP
+
+WHEN NOT MATCHED THEN  -- если товара нет в целевой таблице
+    INSERT (
+        product_id,
+        product_name,
+        price,
+        category,
+        last_updated
+    ) VALUES (
+        source.product_id,
+        source.product_name,
+        source.price,
+        source.category,
+        CURRENT_TIMESTAMP
+    );
+   
+   
+   
 /*Информация об объектах БД (dba_source)*/
 
 SELECT *
@@ -610,12 +653,19 @@ FROM dual;
         TO_DATE('2023-10-15 13:04:12', 'YYYY-MM-DD HH24:MI:SS') AS my_datetime
  FROM dual;
  
+ -- Получение текущей даты (Функция SYSDATE)  
+ -- SYSDATE - Возвращает системную дату и время сервера БД (независимо от часового пояса сеанса).
+ 
+ SELECT SYSDATE 
+ FROM DUAL;
+ 
  
 /* Работа с правами доступа */
  
-grant execute on CUSTOM_PROCEDURE_NAME to CURRENT_SCHEMA_NAME with grant option;        -- доступ на вызов пользовательской хранимой процедуры (CUSTOM_PROCEDURE_NAME) из схемы (CURRENT_SCHEMA_NAME)
-grant execute on function schema_name.function_name to target_schema with grant option; -- доступ на вызов пользовательской функции
-grant select on REMOTE_SCHEMA_NAME.TABLE_NAME to CURRENT_SCHEMA_NAME with grant option; -- доступ на выбор из чужой схемы (REMOTE_SCHEMA_NAME) таблицы (TABLE_NAME) из схемы (CURRENT_SCHEMA_NAME)
+grant execute on CUSTOM_PROCEDURE_NAME to CURRENT_SCHEMA_NAME with grant option;                -- доступ на вызов пользовательской хранимой процедуры (CUSTOM_PROCEDURE_NAME) из схемы (CURRENT_SCHEMA_NAME)
+grant execute on function schema_name.function_name to target_schema with grant option;         -- доступ на вызов пользовательской функции
+grant select on REMOTE_SCHEMA_NAME.TABLE_NAME to CURRENT_SCHEMA_NAME with grant option;         -- доступ на выбор из чужой схемы (REMOTE_SCHEMA_NAME) таблицы (TABLE_NAME) из схемы (CURRENT_SCHEMA_NAME)
+grant select on REMOTE_SCHEMA_NAME.SEQ$CUSTOMERS$ID to CURRENT_SCHEMA_NAME with grant option;   -- доступ на использование последовательности (sequence) 
 
 /* Работа с коллекцией элементов пользовательского типа*/
 
