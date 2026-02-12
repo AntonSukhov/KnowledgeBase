@@ -715,3 +715,52 @@ BEGIN
     END IF;
 
 END;
+
+--5. Замены PL/SQL на SQL
+
+-- 5.1 Замена цикла на один SQL‑запрос:
+
+--  Через CONNECT BY (классический способ и быстрый):
+
+SELECT 
+    CUSTOM_FUNC_1( 
+		0,
+        TO_DATE('01.01.2026', 'DD.MM.YYYY'), level - 1)
+    ) AS v_end_date
+FROM
+    dual
+CONNECT BY
+    level <= 6;
+	
+Как это работает:
+
+    level — псевдостолбец, который автоматически увеличивается на 1 при каждом шаге рекурсии.
+	   level − 1 сделано, чтобы итерация началась с 0,а не с 1.
+
+    CONNECT BY level <= 6 — ограничивает количество итераций до 6 (как v_month_count)
+	
+--6. Работа с UDT
+
+--6.1 Создание UDT
+
+CREATE OR REPLACE TYPE SCHEMA_NAME.TYPE_NAME FORCE AS OBJECT (
+    ID              NUMBER(5),           -- ИД           
+    REPORT_YEAR     NUMBER(4),           -- Отчетный год               
+    DESCRIPTION     VARCHAR2(255 CHAR),  -- Примечание                    
+    
+    CONSTRUCTOR FUNCTION TYPE_NAME
+        RETURN SELF AS RESULT
+);
+/
+CREATE OR REPLACE TYPE BODY SCHEMA_NAME.TYPE_NAME IS
+    CONSTRUCTOR FUNCTION TYPE_NAME
+        RETURN SELF AS RESULT IS
+    BEGIN
+
+      
+        RETURN;  
+    END;
+END;
+/
+
+
