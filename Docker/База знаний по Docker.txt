@@ -13,9 +13,26 @@ sudo docker images
 --Посмотреть список запущенных образов или работающих контейнеров.
 sudo docker ps -a
 
+--Создать общую сеть, чтобы несколько контейнеров работали в ней и видели друг друга
+docker network create subd-net
+
 --Запуск образа
 sudo docker run -p 5432:5432 -v ~/Volumes/PostgreSql:/var/lib/postgresql/data --name postgresql-container postgresql-image
 sudo docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=passworD142@" -p 1433:1433 -v ~/Volumes/MsSql:/var/opt/mssql -d --name mssql-container mssql-image
+
+--Запуск образа в сети
+sudo docker run -p 5432:5432 -v ~/Volumes/PostgreSql:/var/lib/postgresql/data --name postgresql-container --network subd-net postgresql-image
+sudo docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=passworD142@" -p 1433:1433 -v ~/Volumes/MsSql:/var/opt/mssql -d --name mssql-container --network subd-net mssql-image
+
+Примечание - если возникнет ошибка docker: Error response from daemon: Conflict. The container name "/mssql-container" is already in use by container "93d26904d61badb6b3522319a7f862e295c2a2e63ad2c48068b9fc376b6b08ca". 
+Просто удалите контейнер с помощью команды:
+sudo docker rm mssql-container
+
+--Добавить койтейнер к сети
+sudo docker network connect subd-net postgresql-container
+
+--Удалить контейнер из сети
+sudo docker network disconnect subd-network postgresql-container
 
 --Удалить образ
 sudo docker rmi postgresql-image
@@ -32,12 +49,14 @@ sudo docker rm -f mssql-container
 sudo docker stop postgresql-container
 sudo docker stop mssql-container
 
+--Остановить несколько контейнеров
+sudo docker stop postgresql-container mssql-container
+
 --Запустить остановленный контейнер
 sudo docker start postgresql-container
 sudo docker start mssql-container
 
 --Запустить bash в запущенном контейнере
-
 sudo docker exec -it postgresql-container bash
 sudo docker exec -it mssql-container bash
 
