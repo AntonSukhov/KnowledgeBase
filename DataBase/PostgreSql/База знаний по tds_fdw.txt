@@ -1,0 +1,44 @@
+ #Модуль tds_fwd представляет собой оболочку внешних данных PostgreSQL для подключения к базам данных Sybase и Microsoft SQL server, 
+ #использующим протокол табличного потока данных TDS.
+ 
+1. Установка модуля в docker контейнера с ОС Debian
+1.1 Получить доступ к bash контейнера с Pg 
+sudo docker exec -it postgresql-container bash
+Примечание - обязательно под sudo
+
+1.2 Установите зависимости
+apt-get update
+apt-get install -y postgresql-server-dev-17
+
+1.3 Скачайте и соберите tds_fdw
+1.3.1 Скачайте исходники:
+git clone https://github.com/tds-fdw/tds_fdw.git
+cd tds_fdw
+1.3.2 Соберите расширение:
+make PG_CONFIG=/usr/lib/postgresql/17/bin/pg_config
+make install PG_CONFIG=/usr/lib/postgresql/17/bin/pg_config
+Примечание - если make не найден, установите его: apt-get install make    # Debian/Ubuntu
+1.3.3 Проверьте установку:
+ls -l /usr/share/postgresql/17/extension/tds_fdw.control
+ls -l /usr/lib/postgresql/17/lib/tds_fdw.so
+Примечание - если все установлено, то файл будет существовать. Например, /usr/lib/postgresql/17/lib/tds_fdw.so.
+
+1.4 Перезапустите PostgreSQL (внутри контейнера) или сам контейнер
+Чтобы PostgreSQL «увидел» новое расширение
+sudo docker restart postgresql-container
+
+1.5 Создайте расширение в PostgreSQL
+CREATE EXTENSION tds_fdw;
+
+1.6 Проверить результат
+SELECT * FROM pg_extension WHERE extname = 'tds_fdw';
+
+Если вы получили вывод запроса — это подтверждает, что расширение tds_fdw уже установлено в вашей системе.
+
+Разберём ключевые поля:
+
+extname: 	tds_fdw — имя расширения.
+extowner: 	10 — OID владельца (обычно это пользователь postgres или другой суперпользователь).
+extnamespace: 	16385 — OID схемы, в которой установлено расширение (не public!).
+extversion: 	2.0.5 — версия расширения.
+extrelocatable: true — можно перенести в другую схему.
