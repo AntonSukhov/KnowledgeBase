@@ -82,4 +82,7 @@ OPTIONS (
     table_name 'Departments'           -- имя таблицы в MS SQL
 );
 
+3. Получить данные из MS SQL в PostgreSQL с помощью внешней таблицы ("OuterDepartments")
 
+SELECT *
+FROM "OuterDepartments" AS od 
