@@ -111,4 +111,23 @@ dotnet new sln -n ИмяВашегоРешения
 dotnet new classlib -n ИмяВашегоПроекта -f net9.0
 dotnet sln add ИмяВашегоПроекта/ИмяВашегоПроекта.csproj
 
+--14. Работа с Avalonia
+--14.1 Установка шаблона Avalonia
+dotnet new install Avalonia.Templates
+
+--14.2 Создайте проект обычного приложения
+cd /ПутькПапкеРешения/
+dotnet new avalonia.app -o ИмяВашегоРешения --framework net9.0
+
+Структура созданного проекта:
+Program.cs — точка входа;
+App.axaml — глобальные стили и ресурсы;
+MainWindow.axaml — главное окно;
+MainWindow.axaml.cs — код окна.
+
+--14.3 Создайте проект mvvm приложения
+cd /ПутькПапкеРешения/
+dotnet new avalonia.mvvm -o ИмяВашегоРешения --framework net9.0
+
+
 
