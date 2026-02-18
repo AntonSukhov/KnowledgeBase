@@ -42,3 +42,44 @@ extowner: 	10 — OID владельца (обычно это пользоват
 extnamespace: 	16385 — OID схемы, в которой установлено расширение (не public!).
 extversion: 	2.0.5 — версия расширения.
 extrelocatable: true — можно перенести в другую схему.
+
+2. Настройка tds_fdw
+2.1 Создайте внешний сервер
+Укажите параметры подключения к MS SQL:
+
+CREATE SERVER mssql_server
+FOREIGN DATA WRAPPER tds_fdw
+OPTIONS (
+    servername 'mssql-container',      	-- IP, хост MS SQL или имя docker контейнер где MS SQL
+    port '1433',                 	-- порт (по умолчанию 1433)
+    database 'DbExample'         	-- имя БД на MS SQL
+);
+
+Примечание - для удаления внешнего сервера выполните команду:
+DROP SERVER mssql_server CASCADE;
+
+2.2 Настройте сопоставление пользователей (user mapping)
+Свяжите пользователя PostgreSQL с учётной записью MS SQL:
+
+CREATE USER MAPPING FOR postgres
+SERVER mssql_server
+OPTIONS (
+    username 'sa',        -- логин в MS SQL
+    password 'sa'    	 -- пароль в MS SQL
+);
+
+
+2.3 Создайте внешнюю таблицу
+Опишите структуру таблицы из MS SQL в PostgreSQL:
+
+CREATE FOREIGN TABLE "OuterDepartments" (
+    "Id"     INTEGER,
+    "Name"   VARCHAR(200)
+)
+SERVER mssql_server
+OPTIONS (
+    schema_name 'dbo',                 -- схема в MS SQL (обычно 'dbo')
+    table_name 'Departments'           -- имя таблицы в MS SQL
+);
+
+
