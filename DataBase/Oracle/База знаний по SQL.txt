@@ -1,4 +1,4 @@
---Простой пример создания двух связанных таблиц и заполнения данными
+/* Cоздание связанных таблиц*/
 CREATE TABLE Departments 
 (
     Id INT NOT NULL, 
@@ -19,6 +19,7 @@ CREATE TABLE Employees
     CONSTRAINT Employees_DepartmentId_Fk FOREIGN KEY (DepartmentId) REFERENCES Departments(Id)
 );
 
+/* Заполнение связанных таблиц данными*/
 INSERT INTO Departments (Id, Name) Values (1, 'Отдел 1');
 
 INSERT INTO Departments (Id , Name)
@@ -53,14 +54,14 @@ SELECT 10, 'Иван', 'Трунин','Петрович', 0, TO_DATE('15-12-1950
 UNION
 SELECT 11, 'Иван', 'Таранов','Петрович', 1, TO_DATE('01-08-1980', 'DD-MM-YYYY'), 5 FROM dual;
 
---Простой пример получения данных из двух таблиц
+/* Получение данных из двух таблиц*/
 SELECT d.Id, d.Name, Count(e.Id) AS EmployeesCount
 FROM Departments d 
 LEFT JOIN Employees e 
    ON d.Id = e.DepartmentId
 GROUP BY d.Id, d.Name;
 
---Пример работы с CTE
+/* Работа с CTE */
 WITH CteDepartments AS
 (
     SELECT d.Id, 
@@ -79,6 +80,49 @@ SELECT dep.Id, dep.Name, emp.EmployeeId, emp.Fio
 FROM CteDepartments dep
 INNER JOIN CteEmployees emp 
    ON dep.Id = emp.DepartmentId;
+   
+--CTE и MERGE
+
+MERGE INTO products_target target
+USING 
+(  WITH cleaned_source AS (
+		SELECT 
+			product_id,
+			product_name,
+			price,
+			category
+		FROM products_source
+		WHERE price > 0  -- фильтруем некорректные цены
+		-- убираем дубли, оставляя самую свежую запись
+		QUALIFY ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY last_updated DESC) = 1
+   )
+   SELECT *
+   from cleaned_source
+) source
+    ON target.product_id = source.product_id  -- ключ соединения
+WHEN MATCHED THEN  -- если товар найден в целевой таблице
+    UPDATE SET
+        target.product_name = source.product_name,
+        target.price = source.price,
+        target.category = source.category,
+        target.last_updated = CURRENT_TIMESTAMP
+
+WHEN NOT MATCHED THEN  -- если товара нет в целевой таблице
+    INSERT (
+        product_id,
+        product_name,
+        price,
+        category,
+        last_updated
+    ) VALUES (
+        source.product_id,
+        source.product_name,
+        source.price,
+        source.category,
+        CURRENT_TIMESTAMP
+    );
+   
+   
    
 /*Информация об объектах БД (dba_source)*/
 
@@ -342,7 +386,7 @@ ID|NAME               |EMPLOYEE_NAME|HIRE_DATE                    |SALARY|AVG_SA
  3|Отдел бухгалтерии  |Андрей       |2025-02-01 00:00:00.000 +0300|255000|                  255000|
  
  
---Получить список всех прав для указанного пользователя
+/*Получить список всех прав для указанного пользователя*/
 
 SELECT *
 FROM (
@@ -422,7 +466,7 @@ ORDER BY USERNAME,
          A.COLUMN_NAME,
          A.PRIVILEGE;
 		 
---Отображение информации в консоли DBMS_OUTPUT.PUT_LINE
+/*Отображение информации в консоли DBMS_OUTPUT.PUT_LINE*/
 
 -- Включаем вывод
 SET SERVEROUTPUT ON;
@@ -609,11 +653,19 @@ FROM dual;
         TO_DATE('2023-10-15 13:04:12', 'YYYY-MM-DD HH24:MI:SS') AS my_datetime
  FROM dual;
  
+ -- Получение текущей даты (Функция SYSDATE)  
+ -- SYSDATE - Возвращает системную дату и время сервера БД (независимо от часового пояса сеанса).
+ 
+ SELECT SYSDATE 
+ FROM DUAL;
+ 
  
 /* Работа с правами доступа */
  
-grant execute on CUSTOM_PROCEDURE_NAME to CURRENT_SCHEMA_NAME with grant option;        -- доступ на вызов пользовательской хранимой процедуры (CUSTOM_PROCEDURE_NAME) из схемы (CURRENT_SCHEMA_NAME)
-grant select on REMOTE_SCHEMA_NAME.TABLE_NAME to CURRENT_SCHEMA_NAME with grant option; -- доступ на выбор из чужой схемы (REMOTE_SCHEMA_NAME) таблицы (TABLE_NAME) из схемы (CURRENT_SCHEMA_NAME)
+grant execute on CUSTOM_PROCEDURE_NAME to CURRENT_SCHEMA_NAME with grant option;                -- доступ на вызов пользовательской хранимой процедуры (CUSTOM_PROCEDURE_NAME) из схемы (CURRENT_SCHEMA_NAME)
+grant execute on function schema_name.function_name to target_schema with grant option;         -- доступ на вызов пользовательской функции
+grant select on REMOTE_SCHEMA_NAME.TABLE_NAME to CURRENT_SCHEMA_NAME with grant option;         -- доступ на выбор из чужой схемы (REMOTE_SCHEMA_NAME) таблицы (TABLE_NAME) из схемы (CURRENT_SCHEMA_NAME)
+grant select on REMOTE_SCHEMA_NAME.SEQ$CUSTOMERS$ID to CURRENT_SCHEMA_NAME with grant option;   -- доступ на использование последовательности (sequence) 
 
 /* Работа с коллекцией элементов пользовательского типа*/
 
@@ -663,3 +715,52 @@ BEGIN
     END IF;
 
 END;
+
+--5. Замены PL/SQL на SQL
+
+-- 5.1 Замена цикла на один SQL‑запрос:
+
+--  Через CONNECT BY (классический способ и быстрый):
+
+SELECT 
+    CUSTOM_FUNC_1( 
+		0,
+        TO_DATE('01.01.2026', 'DD.MM.YYYY'), level - 1)
+    ) AS v_end_date
+FROM
+    dual
+CONNECT BY
+    level <= 6;
+	
+Как это работает:
+
+    level — псевдостолбец, который автоматически увеличивается на 1 при каждом шаге рекурсии.
+	   level − 1 сделано, чтобы итерация началась с 0,а не с 1.
+
+    CONNECT BY level <= 6 — ограничивает количество итераций до 6 (как v_month_count)
+	
+--6. Работа с UDT
+
+--6.1 Создание UDT
+
+CREATE OR REPLACE TYPE SCHEMA_NAME.TYPE_NAME FORCE AS OBJECT (
+    ID              NUMBER(5),           -- ИД           
+    REPORT_YEAR     NUMBER(4),           -- Отчетный год               
+    DESCRIPTION     VARCHAR2(255 CHAR),  -- Примечание                    
+    
+    CONSTRUCTOR FUNCTION TYPE_NAME
+        RETURN SELF AS RESULT
+);
+/
+CREATE OR REPLACE TYPE BODY SCHEMA_NAME.TYPE_NAME IS
+    CONSTRUCTOR FUNCTION TYPE_NAME
+        RETURN SELF AS RESULT IS
+    BEGIN
+
+      
+        RETURN;  
+    END;
+END;
+/
+
+
