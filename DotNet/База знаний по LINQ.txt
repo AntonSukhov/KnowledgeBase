@@ -275,3 +275,106 @@ namespace IDSP.DAL
         #endregion
     }
 }
+
+--2. Группировка данных по определенным параметрам (GroupBy)
+
+На примере: 
+public record Employee(string Name, string Company, string Department);
+
+var employees = new[]
+{
+	new Employee("Антон",  "КРОК", "Разработка ПО"),
+	new Employee("Михаил", "Индасофт", "Разработка ПО"),
+	new Employee("Катя",   "Индасофт", "Бухгалтерия"),
+	new Employee("Никита", "Яндекс", "Техподдержка"),
+	new Employee("Оля", "Яндекс", "Бухгалтерия"),
+	new Employee("Иван", "Яндекс","Разработка ПО"),
+};
+
+
+--2.1 Группировка по одному параметру
+
+var companies = employees.GroupBy(e => e.Company); //тип данных IEnumerable<IGrouping<string, Employee>>? переменной  companies
+
+foreach (var company in companies)
+{
+    Console.WriteLine($"Компания: {company.Key} Сотрудники: {string.Join(", ", company.Select(p => p.Name))}");
+}
+
+Результат:
+Компания: КРОК Сотрудники: Антон
+Компания: Индасофт Сотрудники: Михаил, Катя
+Компания: Яндекс Сотрудники: Никита, Оля, Иван
+
+С точки зренения хранения данных результат будет представлен так:
+IEnumerable<IGrouping<string, Employee>> companies = 
+[
+    // Группа 1
+    {
+        Key = "КРОК",
+        Elements = [ { Name = "Антон", Company = "КРОК",  Department = "Разработка ПО"} ]
+    },
+    // Группа 2
+    {
+        Key = "Индасофт",
+        Elements = [ 
+            { Name = "Михаил", Company = "Индасофт",  Department = "Разработка ПО" }, 
+            { Name = "Катя", Company = "Индасофт",  Department = "Бухгалтерия" } 
+        ]
+    },
+    // Группа 3
+    {
+        Key = "Яндекс",
+        Elements = [ 
+            { Name = "Никита", Company = "Яндекс",  Department = "Техподдержка" }, 
+            { Name = "Оля", Company = "Яндекс",  Department = "Бухгалтерия" }, 
+            { Name = "Иван", Company = "Яндекс",  Department = "Разработка ПО" } 
+        ]
+    }
+];
+
+--2.2 Группировка по одному параметру с пользовательским выходным результатом
+
+var companies = employees.GroupBy(e => e.Company, g => g.Name); //тип данных IEnumerable<IGrouping<string, string>>? переменной  companies
+
+Результат:
+Компания: КРОК Сотрудники: Антон
+Компания: Индасофт Сотрудники: Михаил, Катя
+Компания: Яндекс Сотрудники: Никита, Оля, Иван
+
+С точки зренения хранения данных результат будет представлен так:
+IEnumerable<IGrouping<string, string>> companies = 
+[
+    // Группа 1
+    {
+        Key = "КРОК",
+        Elements = [ "Антон" ]
+    },
+    // Группа 2
+    {
+        Key = "Индасофт",
+        Elements = [ "Михаил", "Катя"]
+    },
+    // Группа 3
+    {
+        Key = "Яндекс",
+        Elements = [ "Никита", "Оля", "Иван"]
+    }
+];
+
+--2.2 Группировка по двум параметрам
+
+var companies = employees.GroupBy(e => new { e.Company, e.Department }, g => g.Name);  //тип данных IEnumerable<IGrouping<'a, string>>? переменной  companies. 'a - анонимный тип new {string Company, string Department}
+
+foreach (var company in companies)
+{
+    Console.WriteLine($"Компания: {company.Key.Company} Отдел: {company.Key.Department} Сотрудники: {string.Join(", ", company.Select(p => p))}");
+}
+
+Результат:
+Компания: КРОК Отдел: Разработка ПО Сотрудники: Антон
+Компания: Индасофт Отдел: Разработка ПО Сотрудники: Михаил
+Компания: Индасофт Отдел: Бухгалтерия Сотрудники: Катя
+Компания: Яндекс Отдел: Техподдержка Сотрудники: Никита
+Компания: Яндекс Отдел: Бухгалтерия Сотрудники: Оля
+Компания: Яндекс Отдел: Разработка ПО Сотрудники: Иван
