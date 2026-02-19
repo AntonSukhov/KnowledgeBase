@@ -1,4 +1,4 @@
---Создание образа из docker файла
+--1. Создание образа из docker файла
 sudo docker build -t postgresql-image -f PostgresDockerfile ~/
 sudo docker build -t mssql-image -f MsSqlServerDockerfile ~/
 
@@ -7,20 +7,20 @@ sudo docker build -t mssql-image -f MsSqlServerDockerfile ~/
 
 ~/ - путь к каталогу где храниться docker файл. Например, /home/anton/.
 
---Посмотреть список созданных образов
+--2. Посмотреть список созданных образов
 sudo docker images
 
---Посмотреть список запущенных образов или работающих контейнеров.
+--3. Посмотреть список запущенных образов или работающих контейнеров.
 sudo docker ps -a
 
---Создать общую сеть, чтобы несколько контейнеров работали в ней и видели друг друга
+--4. Создать общую сеть, чтобы несколько контейнеров работали в ней и видели друг друга
 docker network create subd-net
 
---Запуск образа
+--5. Запуск образа
 sudo docker run -p 5432:5432 -v ~/Volumes/PostgreSql:/var/lib/postgresql/data --name postgresql-container postgresql-image
 sudo docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=passworD142@" -p 1433:1433 -v ~/Volumes/MsSql:/var/opt/mssql -d --name mssql-container mssql-image
 
---Запуск образа в сети
+--5.1 Запуск образа в сети
 sudo docker run -p 5432:5432 -v ~/Volumes/PostgreSql:/var/lib/postgresql/data --name postgresql-container --network subd-net postgresql-image
 sudo docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=passworD142@" -p 1433:1433 -v ~/Volumes/MsSql:/var/opt/mssql -d --name mssql-container --network subd-net mssql-image
 
@@ -28,37 +28,87 @@ sudo docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=passworD142@" -p 1433:1
 Просто удалите контейнер с помощью команды:
 sudo docker rm mssql-container
 
---Добавить койтейнер к сети
+--6. Добавить койтейнер к сети
 sudo docker network connect subd-net postgresql-container
 
---Удалить контейнер из сети
+--7. Удалить контейнер из сети
 sudo docker network disconnect subd-network postgresql-container
 
---Удалить образ
+--8. Удалить образ
 sudo docker rmi postgresql-image
 sudo docker rmi mssql-image
 
---Удалить контейнер
+--9. Удалить контейнер
 sudo docker rm postgresql-container
 sudo docker rm -f postgresql-container
 sudo docker rm mssql-container
 sudo docker rm -f mssql-container
 -f - флаг для принудительного удаления контейнера, даже если он запущен
 
---Остановить контейнер
+--10. Остановить контейнер
 sudo docker stop postgresql-container
 sudo docker stop mssql-container
 
---Остановить несколько контейнеров
+--10.1 Остановить несколько контейнеров
 sudo docker stop postgresql-container mssql-container
 
---Запустить остановленный контейнер
+--11. Запустить остановленный контейнер
 sudo docker start postgresql-container
 sudo docker start mssql-container
 
---Запустить bash в запущенном контейнере
+--12. Запустить bash в запущенном контейнере
 sudo docker exec -it postgresql-container bash
 sudo docker exec -it mssql-container bash
+
+--13. Восстановить пароль от учетки запущенной программы Portainer в контейнере
+
+--13.1 Получить информацию (имя или ИД) о контейнере в котором запущена программа
+sudo docker ps
+
+--13.2 Остановить контейнер (по имени или ИД)
+sudo docker stop portainer
+sudo docker stop 25a34d9e06e7
+
+--13.3 Загрузите официальный образ для сброса пароля
+sudo docker pull portainer/helper-reset-password
+
+--13.4 Запустите контейнер для сброса пароля
+Теперь запустите вспомогательный контейнер. 
+Он автоматически сбросит пароль администратора и выведет новый в консоль:
+sudo docker run --rm -v portainer_data:/data portainer/helper-reset-password
+
+Что делает эта команда:
+    --rm — автоматически удалит контейнер после выполнения;
+    -v portainer_data:/data — подключает том данных Portainer (portainer_data) к контейнеру по пути /data, где Portainer хранит свои данные (включая учётные записи);
+    portainer/helper-reset-password — имя образа, который выполнит сброс пароля.
+
+Результат выполнения команды выведен в консоль:
+{"level":"info","filename":"portainer.db","time":"2026-02-19T05:16:58Z","message":"loading PortainerDB"}
+2026/02/19 05:16:58 Password successfully updated for user: sa
+2026/02/19 05:16:58 Use the following password to login: ~|Om&f?"3s62SU`9Xj7d0PwCWu:Yh58_
+где sa 				     - значение логина
+    ~|Om&f?"3s62SU`9Xj7d0PwCWu:Yh58_ - значение нового временного пароля
+    
+--13.5 Запустите контейнер Portainer
+sudo docker start portainer
+
+--13.6 Запустить вэб-интерфейс
+В браузере укажите URL: http://localhost:9000/#!/auth
+
+--13.7 Войдите в программу
+Укажите логин:sa
+Укажите пароль:~|Om&f?"3s62SU`9Xj7d0PwCWu:Yh58_
+
+--13.8 Смените временный пароль на постоянный
+Сразу после успешного входа обязательно смените временный сложный пароль на свой (но тоже надёжный):
+
+    1. Нажмите на иконку профиля (или имя пользователя sa) в правом верхнем углу.
+    2. Выберите «My Profile» или «Account».
+    3. Найдите раздел «Change Password».
+    4. В поле «Current Password» введите временный пароль, который вы получили на шаге 2.
+    5. Придумайте и введите новый надёжный пароль в поля «New Password» и «Confirm New Password».
+    6. Нажмите «Save» или «Update».
+    
 
 
 
