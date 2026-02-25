@@ -19,6 +19,14 @@ CREATE TABLE Employees
     CONSTRAINT Employees_DepartmentId_Fk FOREIGN KEY (DepartmentId) REFERENCES Departments(Id)
 );
 
+/*Создание таблицы со столбцом с автоинкриментом*/
+CREATE TABLE TEST.INVENTORY_REQUESTS 
+(
+	ID NUMBER(38,0) GENERATED ALWAYS AS IDENTITY START WITH 1 INCREMENT BY 1 NOT NULL,
+	CONSTRAINT INVENTORY_REQUESTS_PK PRIMARY KEY (ID)
+);
+COMMENT ON TABLE TAXFL_TEST.INVENTORY_REQUESTS IS 'Заявки на выполнение инвентаризации';
+
 /* Заполнение связанных таблиц данными*/
 INSERT INTO Departments (Id, Name) Values (1, 'Отдел 1');
 
@@ -659,6 +667,11 @@ FROM dual;
  SELECT SYSDATE 
  FROM DUAL;
  
+ -- Преобразование даты и время в строку указанного формата
+ 
+ SELECT TO_CHAR(TO_DATE('2023-10-15 13:04:12', 'YYYY-MM-DD HH24:MI:SS'), 'DD.MM.YYYY HH24:MI:SS')
+ FROM DUAL;
+ 
  
 /* Работа с правами доступа */
  
@@ -763,4 +776,253 @@ CREATE OR REPLACE TYPE BODY SCHEMA_NAME.TYPE_NAME IS
 END;
 /
 
+-- 6. Генерация случайных чисел
 
+-- 6.1 Случайная строка
+
+SELECT 'ИНВ от ' || TO_CHAR(TO_DATE('2023-10-15 13:04:12', 'YYYY-MM-DD HH24:MI:SS'), 'DD.MM.YYYY') 
+				 || ' ' || DBMS_RANDOM.STRING('U', 4)    -- 4 заглавные буквы
+FROM DUAL;	
+
+'A' — смешанный регистр букв и цифр;
+'U' — только заглавные буквы;
+'L' — только строчные буквы;
+'X' — заглавные буквы и цифры.			
+				   
+-- 6.2 Уникальный GUID
+
+SELECT 'ИНВ_' || TO_CHAR(SYSDATE, 'YYYYMMDD') || '_' || SYS_GUID()
+FROM DUAL;
+
+-- 6.3 Случайное целое число из диапазона
+
+SELECT FLOOR(DBMS_RANDOM.VALUE(1, 999))
+FROM DUAL;
+
+-- 6.4 Случайная дата и время из диапазона
+
+SELECT SYSDATE + DBMS_RANDOM.VALUE(-30, 30)  --Результат: дата ± 30 дней от текущей
+FROM DUAL;
+
+
+-- 7. Обмен сообщений между хранимыми процедурами и асинхронным их выполнением
+
+-- 7.1 Дать права на схему
+
+GRANT EXECUTE ON SYS.DBMS_AQ TO TEST;
+GRANT EXECUTE ON SYS.DBMS_AQADM TO TEST;
+
+BEGIN
+    DBMS_AQADM.GRANT_QUEUE_PRIVILEGE(
+        privilege    => 'ALL',
+        queue_name   => 'TEST.INVENTORY_MSG_QUEUE',
+        grantee      => 'TEST',
+        grant_option => FALSE
+    );
+END;
+
+-- 7.2 Сначала создадим очередь для асинхронной передачи сообщений:
+
+BEGIN
+    --Создаётся таблица очередей — специальная структура для хранения сообщений.
+    DBMS_AQADM.CREATE_QUEUE_TABLE(
+        queue_table => 'TEST.INVENTORY_MSG_QT',
+        queue_payload_type => 'SYS.AQ$_JMS_TEXT_MESSAGE'
+    );
+
+    -- Создаётся сама очередь внутри ранее созданной таблицы очередей
+    DBMS_AQADM.CREATE_QUEUE(
+        queue_name => 'TEST.INVENTORY_MSG_QUEUE',
+        queue_table => 'TEST.INVENTORY_MSG_QT'
+    );
+
+    -- Очередь активируется — становится готовой к приёму и отправке сообщений.
+    DBMS_AQADM.START_QUEUE( 'TEST.INVENTORY_MSG_QUEUE');
+END;
+/
+
+-- queue_table  - параметр, содержащий имя таблицы, хранящей сообщения (TEST.INVENTORY_MSG_QT)
+-- queue_payload_type - параметр задает тип данных в котором будет храниться сообщения (SYS.AQ$_JMS_TEXT_MESSAGE).
+--                      SYS.AQ$_JMS_TEXT_MESSAGE стандартный тип Oracle для текстовых сообщений (в формате JMS);
+
+-- 7.3 Доработка первой процедуры отправителя
+
+-- =========================================================================================================================
+-- Author:		saa
+-- Create date: 21.12.2025
+-- Update date: 
+-- Description: Создает заявку на выполнение инвентаризации.
+-- Input params:
+--   request_number:      Номер заявки.
+--   request_created_at:  Дата и время создания заявки.
+--   request_description: Описание заявки.
+-- version: 1.00.00
+-- History:
+-- ==========================================================================================================================
+PROCEDURE P$CREATE_INV_REQUEST
+(
+     request_number      IN NUMBER,
+     request_created_at  IN TIMESTAMP WITH TIME ZONE,
+     request_description IN VARCHAR2
+)
+AS
+    v_request_created_state NUMBER  := 1;
+    v_request_created_info  VARCHAR2(30 CHAR) := 'Заявка успешно создана';
+	v_message               SYS.AQ$_JMS_TEXT_MESSAGE;                      -- Переменная для сообщения
+    v_enqueue_options       DBMS_AQ.ENQUEUE_OPTIONS_T;                     -- Настройки отправки
+    v_message_properties    DBMS_AQ.MESSAGE_PROPERTIES_T;                  -- Свойства сообщения
+    v_msgid                 RAW(16);                                       -- ID сообщения после отправки
+    v_request_id            NUMBER;
+BEGIN
+	
+	-- 1. Создаём заявку в таблице INVENTORY_REQUESTS
+	INSERT INTO TEST.INVENTORY_REQUESTS (NUM, CREATED_AT, STATE_ID, DESCRIPTION, PROCESSING_INFO)
+	VALUES (request_number,
+	       request_created_at,
+	       v_request_created_state,
+	       request_description,
+	       v_request_created_info)
+	RETURNING ID INTO v_request_id; -- Получаем сгенерированный ID
+	
+	-- 2. Инициализируем объект сообщения для очереди
+	-- Создаёт пустой объект сообщения типа JMS Text Message
+    -- Этот тип выбран, потому что позволяет передавать текстовые данные (в т. ч. JSON)
+    v_message := SYS.AQ$_JMS_TEXT_MESSAGE.CONSTRUCT;
+
+	-- 3. Заполняем сообщение данными для следующей процедуры
+	v_message.set_text('{"request_id": ' || v_request_id || '}');
+	
+	-- 4. Отправляем сообщение в очередь
+	DBMS_AQ.ENQUEUE(
+        queue_name          => 'TEST.INVENTORY_MSG_QUEUE',        -- Имя очереди
+        enqueue_options     => v_enqueue_options,                 -- Настройки отправки (по умолчанию)
+        message_properties => v_message_properties,               -- Свойства сообщения (по умолчанию)
+        payload            => v_message,                          -- Само сообщение (JSON)
+        msgid              => v_msgid                             -- Получаем ID отправленного сообщения
+    );
+	
+	-- 5. Фиксируем транзакцию
+	-- Важно: COMMIT обязателен для завершения операции ENQUEUE
+    -- Без COMMIT сообщение не появится в очереди
+    -- Если INSERT или ENQUEUE завершатся ошибкой, вся транзакция будет откачена
+    COMMIT;
+	     
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE;
+		 
+END P$CREATE_INV_REQUEST;
+
+-- 7.4 Доработка второй процедуры получателя (отправител)
+
+-- =========================================================================================================================
+-- Author:		saa
+-- Create date: 21.12.2025
+-- Update date: 
+-- Description: Создает инвентаризацию.
+-- Input params:
+--   request_id:            ИД заявки.
+-- version: 1.00.00
+-- History:
+-- ==========================================================================================================================
+PROCEDURE P$CREATE_INVENTORY
+(
+     request_id            IN NUMBER
+)
+AS
+    v_request_created_state NUMBER  := 2;
+    v_request_created_info  VARCHAR2(30 CHAR) := 'Начало работ по заявки';
+    v_inventory_created_at  TIMESTAMP WITH TIME ZONE;
+    v_inventory_number      VARCHAR2(1000 CHAR);
+    v_inventory_item_count  NUMBER(6);
+    v_inventory_amount      NUMBER(19, 4);
+    v_message               SYS.AQ$_JMS_TEXT_MESSAGE;
+    v_dequeue_options       DBMS_AQ.DEQUEUE_OPTIONS_T;
+    v_message_properties    DBMS_AQ.MESSAGE_PROPERTIES_T;
+    v_msgid                 RAW(16);
+	v_out_message SYS.AQ$_JMS_TEXT_MESSAGE := SYS.AQ$_JMS_TEXT_MESSAGE.CONSTRUCT;  
+    v_out_options DBMS_AQ.ENQUEUE_OPTIONS_T;  
+    v_out_props DBMS_AQ.MESSAGE_PROPERTIES_T;  
+    v_out_msgid RAW(16);  
+	v_err_message SYS.AQ$_JMS_TEXT_MESSAGE;  -- Объект сообщения об ошибке
+    v_err_options DBMS_AQ.ENQUEUE_OPTIONS_T; 
+    v_err_props DBMS_AQ.MESSAGE_PROPERTIES_T; 
+    v_err_msgid RAW(16); 
+BEGIN
+		
+	 -- 1. Попытка получения данных из очереди: 
+	 -- 1.1 Настройка получения данных: берём первое сообщение, не ждём, если очереди нет
+	 v_dequeue_options.navigation := DBMS_AQ.FIRST_MESSAGE;
+     v_dequeue_options.wait := DBMS_AQ.NO_WAIT;
+	
+	 BEGIN
+        -- 1.2 Пытаемся прочитать сообщение из очереди INVENTORY_MSG_QUEUE
+        DBMS_AQ.DEQUEUE(
+            queue_name          => 'TEST.INVENTORY_MSG_QUEUE',
+            dequeue_options     => v_dequeue_options,
+            message_properties => v_message_properties,
+            payload            => v_message,
+            msgid              => v_msgid
+        );
+        COMMIT;  -- Фиксируем операцию чтения
+     EXCEPTION
+        WHEN DBMS_AQ.NO_MESSAGE THEN
+            NULL; -- Если сообщений нет, просто продолжаем выполнение (ошибка игнорируется)
+     END;
+	 
+	 -- 2. Имитация длительной обработки ( Задержка 5 секунд для демонстрации)
+     DBMS_SESSION.SLEEP(5);
+	 
+	 -- 3. Определения данных инвентаризации и сохранение её в таблицу
+	 v_inventory_created_at := SYSDATE;
+	 v_inventory_number := 'ИНВ от ' || TO_CHAR(v_inventory_created_at, 'DD.MM.YYYY') 
+	                                 || ' ' || DBMS_RANDOM.STRING('U', 4);
+	 v_inventory_item_count := FLOOR(DBMS_RANDOM.VALUE(1, 999));
+	 v_inventory_amount     := FLOOR(DBMS_RANDOM.VALUE(1, 999999));
+	 
+	 INSERT INTO TEST.INVENTORIES (NUM, CREATED_AT, ITEM_COUNT, AMOUNT)
+	 SELECT v_inventory_number,
+	        v_inventory_created_at,
+	        v_inventory_item_count,
+	        v_inventory_amount 
+	 FROM DUAL;
+	 
+	 --4. Отправка сообщения об успешном завершении в очередь
+     v_out_message := SYS.AQ$_JMS_TEXT_MESSAGE.CONSTRUCT;       
+     v_out_message.set_text('{"request_id": ' || request_id || ', "state_id": 3, "commentary": "Инвентаризация успешно создана"}');
+
+     -- Отправляем сообщение в очередь INVENTORY_MSG_QUEUE
+     DBMS_AQ.ENQUEUE(
+        queue_name          => 'TEST.INVENTORY_MSG_QUEUE',
+        enqueue_options     => v_out_options,
+        message_properties => v_out_props,
+        payload            => v_out_message,
+        msgid              => v_out_msgid
+     );
+
+     COMMIT;  -- Фиксация всех изменений
+	      
+
+EXCEPTION
+    -- 5. Обработка ошибок
+    WHEN OTHERS THEN
+        -- В случае любой ошибки отправляем сообщение о неудаче в очередь
+        v_err_message := SYS.AQ$_JMS_TEXT_MESSAGE.CONSTRUCT;  -- Объект сообщения об ошибке
+
+        -- Формируем текст сообщения: ID заявки, статус -1 (ошибка), описание ошибки из SQLERRM
+        v_err_message.set_text('{"request_id": ' || request_id || ', "state_id": 4, "commentary": "Ошибка при создании инвентаризации"}');
+
+        -- Отправляем сообщение об ошибке в очередь
+        DBMS_AQ.ENQUEUE(
+            queue_name          => 'TEST.INVENTORY_MSG_QUEUE',
+            enqueue_options     => v_err_options,
+            message_properties => v_err_props,
+            payload            => v_err_message,
+            msgid              => v_err_msgid
+        );
+        COMMIT;  -- Фиксируем отправку сообщения об ошибке
+        END;
+        RAISE;  -- Передаём исключение выше для дальнейшей обработки     
+     
+END P$CREATE_INVENTORY;
