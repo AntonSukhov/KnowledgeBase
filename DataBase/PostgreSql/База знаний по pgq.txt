@@ -1,0 +1,198 @@
+ #pgq (Generic Queue for PostgreSQL) можно бесплатно скачать и использовать для реализации слабосвязанного взаимодействия между процедурами через отправку и получение сообщений. 
+ #Это открытое расширение с лицензией ISC, которое предоставляет систему очередей с простым API на основе SQL-функций.
+ 
+Основные функции:
+        создание и удаление очередей (pgq.create_queue, pgq.drop_queue);
+        добавление сообщений в очередь (pgq.insert_event);
+        получение пакетов сообщений (бачей) для обработки (pgq.get_batch_events);
+        отметка пакета как обработанного (pgq.finish_batch);
+        повторная отправка сообщений при ошибках (pgq.event_retry). 
+Требования:
+	Для работы требуется демон pgqd (внешняя программа, которая периодически группирует накопленные сообщения в бачи). 
+	Без работающего pgqd новые бачи не создаются, и консьюмеры (потребители) не смогут получать сообщения. 
+Ограничения:
+        отсутствие подробной документации (есть только описание API); 
+        пакетная обработка событий — нельзя обрабатывать отдельные сообщения, только группы (бачи);
+        пока обработчик не пометит пакет как полностью обработанный, все события пакета могут быть доставлены повторно в случае сбоя.
+        
+Аналогия: почта и почтальон
+
+Представьте, что pgq — это почтовая система:
+    Очередь (Queue) = почтовый ящик для писем от всех отправителей. Сюда попадают все новые письма (события).
+    Событие (Event) = одно письмо с адресом, текстом и датой отправки.
+    Тик (Tick) = время, когда почтальон собирает письма в сумку. Например, в 9:00, 12:00 и 18:00.
+    Батч (Batch) = сумка с письмами, собранная между двумя сборами. Например, письма с 9:00 до 12:00 идут в одну сумку (батч № 1), с 12:00 до 18:00 — в сумку № 2.
+    Потребитель (Consumer) = почтальон, который забирает сумки (батчи) и разносит письма (события) адресатам.
+    Тicker = расписание работы почтальона. Запускает процесс сбора писем в сумки.
+ 
+1. Установка модуля в docker контейнера с ОС Debian
+1.1 Получить доступ к bash контейнера с Pg 
+sudo docker exec -it postgresql-container bash
+Примечание - обязательно под sudo
+
+1.2 Установка расширения pgq и pgqd
+sudo apt install postgresql-17-pgq3 pgqd
+
+1.3 Проверить результат установки
+dpkg -l | grep -E "postgresql-17-pgq3|pgqd|libevent"
+
+Результат должен быть вроде этого:
+ii  libevent-2.1-7:amd64            2.1.12-stable-8                amd64        Asynchronous event notification library
+ii  pgqd                            3.5-2.pgdg120+1                amd64        Queue maintenance daemon for PgQ
+ii  postgresql-17-pgq3              3.5.1-2.pgdg12+1               amd64        Generic queue for PostgreSQL
+    
+где    
+    libevent-2.1-7 — библиотека зависимостей;
+    pgqd — демон‑тикер для управления очередями;
+    postgresql-17-pgq3 — само расширение pgq.
+    
+2 Создайте расширение в PostgreSQL
+CREATE EXTENSION IF NOT EXISTS pgq;
+
+2.1 Проверить результат
+SELECT * FROM pg_extension WHERE extname = 'pgq';
+
+Если вы получили вывод запроса — это подтверждает, что расширение pgq уже установлено в вашей системе.
+
+Разберём ключевые поля:
+
+    extname: pgq — имя расширения;
+    extversion: 3.5.1 — версия расширения (актуальная для PostgreSQL 17);
+    extowner: 10 — владелец расширения (обычно пользователь postgres);
+    extnamespace: 11 — пространство имён, где установлено расширение;
+    extrelocatable: false — расширение нельзя переместить в другое пространство имён;
+    extconfig: список OID‑объектов, созданных расширением (внутренняя информация PostgreSQL).
+       
+3 Настройка демона pgqd
+
+3.1 Проверьте доступность pgqd
+which pgqd
+
+должно быть 
+/usr/bin/pgqd
+
+3.2 Запуск pgqd
+3.2.1 Проверьте конфигурацию внесите следующие изменения
+nano /etc/pgqd.ini
+
+[pgqd]
+
+# libpq connect string without dbname=
+base_connstr = host=localhost port=5432 user=postgres
+
+# startup db to query other databases
+initial_database = template1
+
+# limit ticker to specific databases
+database_list = DbExample  # замените на имя вашей БД
+
+# log into syslog
+syslog = 0
+
+# how often to check for new databases
+check_period = 60
+
+# how often to flush retry queue
+retry_period = 30
+
+# how often to do maintenance
+maint_period = 120
+
+# how often to run ticker (seconds)
+ticker_period = 10
+
+3.2.2 Запустите pgqd
+pgqd -d /etc/pgqd.ini >> /var/log/postgresql/pgqd.log 2>&1 &
+
+3.2.2.1 Проверить
+ps aux | grep pgqd
+
+Результат
+  root         394  0.0  0.0  18352  4856 ?        S    08:53   0:00 pgqd -d /etc/pgqd.ini
+  [1]+  Done                    pgqd -d /etc/pgqd.ini >> /var/log/postgresql/pgqd.log 2>&1
+
+Что это значит:
+    PID процесса — 394;
+    процесс работает (S — спящий/ожидает событий);
+    команда pgqd -d /etc/pgqd.ini выполняется корректно.
+    Строка [1]+ Done означает, что фоновая задача (запуск pgqd) успешно стартовала и теперь работает независимо.
+
+
+    
+4. Список всех пользовательских функций схемы pgq
+
+SELECT nspname AS schema_name,
+       proname AS function_name,
+       pg_get_function_identity_arguments(p.oid) AS arguments
+FROM pg_proc p
+JOIN pg_namespace n ON p.pronamespace = n.oid
+WHERE nspname = 'pgq';
+
+4.1. Найти пользовательскую функцию по имени 
+SELECT nspname AS schema_name,
+       proname AS function_name,
+       pg_get_function_identity_arguments(p.oid) AS arguments
+FROM pg_proc p
+JOIN pg_namespace n ON p.pronamespace = n.oid
+WHERE proname = 'next_batch' AND nspname = 'pgq';
+
+5. Полный цикл работы (по шагам)
+5.1 Создайте очередь
+SELECT pgq.create_queue('orders_queue');
+
+Что делает: создаёт новую очередь orders_queue.
+Статус: успешно, если очередь не существовала.
+
+5.2 Зарегистрируйте потребителя (почтальона):
+SELECT pgq.register_consumer('orders_queue', 'order_consumer');
+
+Что делает: регистрирует потребителя order_consumer для очереди orders_queue.
+Ключевой момент: потребитель начинает отслеживать события, созданные после его регистрации. 
+Если бы событие было добавлено до регистрации, оно бы не попало в батчи для этого потребителя.
+Важно: регистрация потребителя должна проходить раньше добавления события в очередь.
+
+5.3 Добавьте событие (например, новый заказ)
+SELECT pgq.insert_event('orders_queue', 'order_created', '{"id": 456, "amount": 1000}');
+
+где order_created - название типа события
+    {"id": 456, "amount": 1000} - json с данными события
+    
+Что делает: добавляет событие в очередь.
+Важно: событие теперь находится в очереди, но ещё не входит ни в один батч.
+
+5.4 Запустите тикер (соберите письма в сумку):
+SELECT pgq.ticker('orders_queue');
+SELECT pgq.ticker('orders_queue');
+SELECT pgq.ticker('orders_queue');
+
+Что делает: 
+создаёт новый тик (контрольную точку);
+формирует батч из событий, накопившихся с предыдущего тика;
+если тикер запускается впервые, он создаёт первый батч.
+Проблема: если тикер запускается один раз, батч может быть пуст или не успеть сформироваться.
+
+5.5  Получите батч (заберите сумку):
+SELECT * FROM pgq.next_batch('orders_queue', 'order_consumer');
+где next_batch - ИД батч, например, 4.
+
+Что делает: возвращает ID следующего батча для обработки.
+Нюанс: батч может быть создан, но не содержать событий — например, если тик сформировался до добавления события или из‑за задержки.
+
+5.6 Прочитайте события (прочитайте письма):
+SELECT * FROM pgq.get_batch_events(4);
+
+Что делает: читает события из батча с ID 4.
+Почему может быть пусто:
+  батч № 4 пуст (не содержит событий);
+  событие попало в другой батч (например, № 5);
+  тикер не успел сформировать батч с событием до вызова next_batch.
+  
+5.7 Завершите батч
+SELECT pgq.finish_batch(4);
+
+6 Дополнительные команды
+6.1 Удалить очередь
+SELECT pgq.drop_queue('orders_queue', true);
+
+где true удаляет все связанные данные
+
