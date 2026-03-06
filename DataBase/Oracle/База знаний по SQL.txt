@@ -672,6 +672,16 @@ FROM dual;
  SELECT TO_CHAR(TO_DATE('2023-10-15 13:04:12', 'YYYY-MM-DD HH24:MI:SS'), 'DD.MM.YYYY HH24:MI:SS')
  FROM DUAL;
  
+-- Добавление к дате кол-во месяцев
+SELECT TO_DATE('01.01.2026', 'DD.MM.YYYY') AS dt1, 
+       ADD_MONTHS(TO_DATE('01.01.2026', 'DD.MM.YYYY'), 2) AS dt2 
+FROM DUAL;
+
+-- Добавить к дате кол-во дней
+SELECT TO_DATE('01.01.2026', 'DD.MM.YYYY')                AS dt1, 
+       TO_DATE('01.01.2026', 'DD.MM.YYYY') + 1            AS dt2    
+FROM DUAL;
+ 
  
 /* Работа с правами доступа */
  
@@ -751,6 +761,52 @@ CONNECT BY
 	   level − 1 сделано, чтобы итерация началась с 0,а не с 1.
 
     CONNECT BY level <= 6 — ограничивает количество итераций до 6 (как v_month_count)
+	
+-- 5.2 Замена курсора и обхода по нему (цикла) на оператор FOR IN
+
+BEGIN
+  FOR emp_rec IN (
+  
+    WITH Employees AS 
+    (
+       SELECT 1      AS ID,
+              'Иван' AS NAME,
+              150000 AS SALARY
+       FROM DUAL
+       UNION ALL
+       SELECT 2      AS ID,
+              'Олег' AS NAME,
+              250000 AS SALARY
+       FROM DUAL
+       UNION ALL
+       SELECT 3      AS ID,
+              'Андрей' AS NAME,
+              85000 AS SALARY
+       FROM DUAL
+       UNION ALL
+       SELECT 4      AS ID,
+              'Ирина' AS NAME,
+              200000 AS SALARY
+       FROM DUAL
+       UNION ALL
+       SELECT 5      AS ID,
+              'Мария' AS NAME,
+              70000 AS SALARY
+       FROM DUAL
+       
+    )
+    SELECT ID, NAME, SALARY
+    FROM Employees
+    WHERE salary > 100000
+  )
+  
+  LOOP
+    DBMS_OUTPUT.PUT_LINE(
+      'ИД: ' || emp_rec.ID || ', Имя: ' || emp_rec.NAME || ', Зарплата: ' || emp_rec.SALARY
+    );
+  END LOOP;
+  
+END;
 	
 --6. Работа с UDT
 
@@ -1026,3 +1082,31 @@ EXCEPTION
         RAISE;  -- Передаём исключение выше для дальнейшей обработки     
      
 END P$CREATE_INVENTORY;
+
+--8. Сохранение результатов выполнения запроса во временные коллекции
+
+--8.1 Вложенная таблица (TABLE) с типом элементов пользовательская запись (RECORD)
+
+DECLARE
+  TYPE t_department_record IS RECORD 
+  (
+		id       TAXFL_TEST.DEPARTMENT.ID%TYPE,
+    	name     TAXFL_TEST.DEPARTMENT.NAME%TYPE
+  );
+
+  TYPE t_department_table IS TABLE OF t_department_record;
+  
+  v_departments t_department_table;
+BEGIN
+	
+  -- Заполняем коллекцию результатами запроса
+  SELECT ID, NAME
+  BULK COLLECT INTO v_departments
+  FROM TAXFL_TEST.DEPARTMENT;
+
+  -- Обрабатываем данные
+  FOR i IN 1..v_departments.COUNT LOOP
+    DBMS_OUTPUT.PUT_LINE('ID: ' || v_departments(i).id || ', Name: ' || v_departments(i).name);
+  END LOOP;
+  
+END;
