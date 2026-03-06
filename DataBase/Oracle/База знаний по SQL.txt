@@ -1110,3 +1110,12 @@ BEGIN
   END LOOP;
   
 END;
+
+Важно: Oracle не поддерживает прямое использование PL/SQL‑коллекции (v_departments) в секции USING оператора MERGE. 
+Решение: 
+-- Обновление таблицы DEPARTMENTS через FORALL (вместо MERGE с коллекцией)
+FORALL i IN 1..v_departments.COUNT
+	UPDATE SCHEM.DEPARTMENTS
+	SET DELETE_DATE = TO_DATE('2026.03.05','YYYY.MM.DD')
+	WHERE ID = v_departments(i).id;
+
