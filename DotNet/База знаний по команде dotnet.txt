@@ -37,6 +37,35 @@ cd D:\Examples\ASP.Net.Core\RazorPages\WebApplication1
 dotnet run
 
 dotnet run --launch-profile https  --запуск WebApp с учетом настройки Https из профиля 
+dotnet run --launch-profile http   --запуск WebApp с учетом настройки Http из профиля 
+
+--4.1 Запустить вэб-приложение в режиме разработчика
+по умолчанию режим "Production"
+--4.1.1 С помощью файла launchSettings.json
+
+Добавить файл launchSettings.json в папку Properties
+
+{
+  "profiles": {
+    "Development": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
+
+и далее запустить проект
+
+--4.1.2 С помощью передачи класса WebApplicationOptions в метод WebApplication.CreateBuilder
+
+var builder = WebApplication.CreateBuilder(
+     new WebApplicationOptions
+	 {
+	     EnvironmentName = Environments.Development
+	 }
+);
 
 --5. Добавить/удалить в проект Nuget-пакет
 
