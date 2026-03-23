@@ -1,0 +1,7 @@
+--Wireshark — программа-анализатор трафика для компьютерных сетей Ethernet и некоторых других.
+
+-- Полезные фильтры для API:
+http.request.method == "POST"	— поиск только POST-запросов.
+http.host == "api.example.com" 	— фильтрация по конкретному API-хосту.
+http.request.uri contains "v1" 	— поиск запросов, содержащих "/v1" в URL.
+tcp.port == 80 			— фильтрация по HTTP-порту.
