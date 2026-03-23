@@ -163,3 +163,45 @@ dotnet new avalonia.mvvm -o ИмяВашегоРешения --framework net9.0
 dotnet new classlib -n ИмяВашегоПроекта -f net9.0        --  Если не требуется добавления библиотеки, то эту команду можно не выполнять 
 dotnet sln add ИмяВашегоПроекта.csproj
 dotnet sln list                                          -- Проверить добавление
+
+--15. Установка SDK
+--15.1 Установка из репозитория
+--15.1.1 Обновить списки пакетов:
+sudo apt update
+
+--15.1.2 Добавьте репозиторий Microsoft (если не добавлен ранее):
+sudo add-apt-repository ppa:dotnet/backports
+sudo apt update
+
+если в сообщения есть apt list --upgradable, то выполнить команду обновления без подтверждения (автоматически):
+sudo apt upgrade -y
+
+перед этим можно выполнить команду симулирующую обновление (показать, что будет сделано, без реальных изменений):
+apt upgrade --dry-run
+
+--15.1.3 Установить нужную версию SDK. Например, .NET 10.x SDK:
+sudo apt install -y dotnet-sdk-10.0
+
+--15.1.4 Посмотреть версии установленных пакетов:
+Для SDK:
+dotnet --list-sdks
+
+Для runtime:
+dotnet --list-runtimes
+
+--15.2 Установка с помощью скрипта
+--15.2.1 Скачайте и установите .NET SDK 10.0:
+curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0 --install-dir $HOME/.dotnet
+
+--15.2.2 Добавьте путь к .NET в переменную окружения PATH. Отредактируйте файл ~/.bashrc (или ~/.zshrc, если используете zsh):
+echo 'export DOTNET_ROOT=$HOME/.dotnet' >> ~/.bashrc
+echo 'export PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools' >> ~/.bashrc
+
+--15.2.3 Примените изменения:
+source ~/.bashrc
+
+--15.2.4 Проверьте установку
+dotnet --version
+
+
+
