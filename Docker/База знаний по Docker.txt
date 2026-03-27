@@ -109,6 +109,28 @@ sudo docker start portainer
     5. Придумайте и введите новый надёжный пароль в поля «New Password» и «Confirm New Password».
     6. Нажмите «Save» или «Update».
     
+--14. Обновление версии Portainer Community Edition (CE) 
+
+--14.1 Создайте резервную копию Portainer.
+--14.1.1 Войдите в Portainer и в левом меню выберите Settings (Настройки).
+--14.1.2 Прокрутите страницу вниз до раздела Backup Portainer и нажмите Download backup. Файл с расширением .tar.gz будет скачан автоматически. 
+
+--14.2 Удалить старый контейнер
+--14.2.1 Получить ИД контейнера (CONTAINER ID) 
+sudo docker ps -a
+--14.2.2 Удалить контейнер даже если он запущен
+sudo docker rm -f 25a34d9e06e7
+--14.2.3 Проверить, что он удален (выполнить команду пункта 14.1.1)
+
+--14.3 Загрузка нового образа (например, до версии 2.39.1)
+docker pull portainer/portainer-ce:2.39.1 
+
+--14.4 Запуск обновлённого контейнера
+docker run -d -p 9000:9000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:2.39.1
+
+--14.5 В браузере перейти по ссылке http://localhost:9000
+
+    
 
 
 
