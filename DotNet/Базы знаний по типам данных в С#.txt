@@ -95,6 +95,14 @@ ffffff-> Represents the six most significant digits of the seconds' fraction; th
  
 fffffff-> Represents the seven most significant digits of the second's fraction; that is, it represents the ten-millionths of a second in a date and time value.
 
+1.2 Преобразование из строки некоторого формата в DateTime
+
+1.2.1 Метод ParseExact класса DateTime
+
+var dt = DateTime.ParseExact("06.04.2026 13:16:55","dd.MM.yyyy HH:mm:ss", null);
+Console.WriteLine(dt.ToString("dd.MM.yyyy HH:mm:ss"));
+
+
 2.Dictionary
 
 2.1 Преобразование в Dictionary
