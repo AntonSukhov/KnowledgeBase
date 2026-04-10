@@ -107,7 +107,7 @@ USING
    SELECT *
    from cleaned_source
 ) source
-    ON target.product_id = source.product_id  -- ключ соединения
+ON (target.product_id = source.product_id)  -- ключ соединения
 WHEN MATCHED THEN  -- если товар найден в целевой таблице
     UPDATE SET
         target.product_name = source.product_name,
