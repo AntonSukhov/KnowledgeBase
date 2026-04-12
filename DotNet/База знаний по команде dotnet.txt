@@ -203,5 +203,23 @@ source ~/.bashrc
 --15.2.4 Проверьте установку
 dotnet --version
 
+--16. Добавление пользовательского секрета
+
+dotnet user-secrets set "MapSettings:GoogleMapsApiKey" F5RJT9GFHKR7
+
+где в файле secrets.json будет добавлен следующий json:
+{
+   "MapSettings": {
+    "GoogleMapsApiKey": "F5RJT9GFHKR7"
+  }
+}
+
+--17. Создание Nuget-пакета
+
+cd /путь к папке проекта
+
+dotnet pack --configuration Release
+
+
 
 
