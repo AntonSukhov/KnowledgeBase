@@ -107,7 +107,7 @@ USING
    SELECT *
    from cleaned_source
 ) source
-    ON target.product_id = source.product_id  -- ключ соединения
+ON (target.product_id = source.product_id)  -- ключ соединения
 WHEN MATCHED THEN  -- если товар найден в целевой таблице
     UPDATE SET
         target.product_name = source.product_name,
@@ -168,13 +168,25 @@ SELECT *
 FROM all_tables 
 WHERE OWNER = 'MY_SCHEMA'
       AND TABLE_NAME = 'CUSTOMERS'
+	  
+SELECT *
+FROM all_tables 
+WHERE TABLE_NAME = 'CUSTOMERS'
 	 
 /*Информация о индексе (dba_indexes)*/ 	 
 SELECT index_name, last_analyzed
 FROM dba_indexes
  WHERE TABLE_NAME = 'TABLE_NAME'
-        AND index_name = 'INDEX_NAME';	  
-	  
+        AND index_name = 'INDEX_NAME';	 
+
+/*Список таблиц в конкретной схеме Oracle, к которым принадлежит указанный столбец (dba_tab_columns)*/		
+SELECT owner AS schema_name,
+       table_name
+FROM dba_tab_columns
+WHERE column_name = 'COLUMN_NAME'
+  AND owner = 'SCHEMA_NAME'
+ORDER BY table_name;	
+	
 
 /*Информация об изменениях в объектах БД с внесенным кодом(t_audit и t_audit_sql_text)*/
 
