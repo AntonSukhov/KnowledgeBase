@@ -259,6 +259,22 @@ sudo apt clean
 
 sudo apt autoclean
 
+16) Создание переменных окружения
+
+16.1) Открыть файл в nano
+sudo nano ~/.profile
+
+16.2) Добавить переменные, сохранить и выйти из nano
+# Переменные для RmWebApi
+ConnectionStrings__MsSqlDbContractConnection=Server=127.0.0.1,1433;Database=DbContracts;User ID=sa;Password=пароль;MultipleActiveResultSets=true;TrustServerCertificate=true
+ConnectionStrings__PostgreDbContractConnection=host=localhost;port=5432;database=DbContracts;user id=postgres;password=пароль
+
+16.3) Выполняет содержимое файла ~/.profile в текущей оболочке 
+source ~/.profile
+
+16.4) Отобразить значения переменных
+printenv | grep ConnectionStrings
+
 
 
 
