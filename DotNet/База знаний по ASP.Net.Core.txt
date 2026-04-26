@@ -1,0 +1,201 @@
+--1. Использование Data Protection API в ASP.NET Core для шифрования данных конфигурации в промышленном окружении
+
+Data Protection API — это высокоуровневый API для защиты конфиденциальных данных, таких как файлы cookie, токены и ключи. 
+Он автоматически управляет созданием, ротацией и хранением ключей, обеспечивая изоляцию между приложениями.
+
+--1.1 Добавьте в проект пакет Microsoft.AspNetCore.DataProtection.
+dotnet add package Microsoft.AspNetCore.DataProtection
+
+--1.2 Зарегистрируйте систему защиты данных:
+services.AddDataProtection();
+
+--1.2.1 Выполните настройку параметров по необходимости.
+
+services.AddDataProtection()
+    	.PersistKeysToFileSystem(new DirectoryInfo(@"путь_к_каталогу"))    
+    	.SetApplicationName("RM.WebApi")
+	.UseCryptographicAlgorithms(new Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.AuthenticatedEncryptionSettings
+	    {
+		EncryptionAlgorithm = Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.EncryptionAlgorithm.AES_256_CBC,
+		ValidationAlgorithm = Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ValidationAlgorithm.HMACSHA256
+	    });
+	    
+PersistKeysToFileSystem 	— указывает, где хранить ключи шифрования (на Ubuntu лучше использовать /etc/ или /var/).
+SetApplicationName 		— задаёт имя приложения для изоляции ключей (важно, если у вас несколько сервисов).
+UseCryptographicAlgorithms 	— задаёт алгоритмы шифрования (AES‑256 и HMAC‑SHA256 — надёжный стандарт).
+
+--1.3 Создание сервиса для работы с шифрованием
+
+/// <summary>
+/// Сервис защиты данных через ASP.NET Core Data Protection API.
+/// </summary>
+public interface IDataProtectionService
+{
+    /// <summary>
+    /// Шифрует текст.
+    /// </summary>
+    /// <param name="plainText">Текст для шифрования.</param>
+    /// <returns>Зашифрованный текст в виде строки.</returns>
+    string Encrypt(string plainText);
+
+    /// <summary>
+    /// Дешифрует текст.
+    /// </summary>
+    /// <param name="cipherText">Зашифрованный текст в виде строки.</param>
+    /// <returns>Расшифрованный текст.</returns>
+    string Decrypt(string cipherText);
+}
+
+/// <summary>
+/// Реализация сервиса защиты данных через ASP.NET Core Data Protection API.
+/// </summary>
+public class DataProtectionService : IDataProtectionService
+{
+    private readonly IDataProtector _protector;
+
+    /// <summary>
+    /// Инициализирует экземпляр <see cref="DataProtectionService"/>.
+    /// </summary>
+    /// <param name="provider">
+    /// Поставщик защиты данных, предоставляемый инфраструктурой ASP.NET Core.
+    /// </param>
+    /// <param name="purpose">
+    /// Цель шифрования данных. Логическая группа данных, для которой создаётся отдельный ключ.
+    /// </param>
+    public DataProtectionService(IDataProtectionProvider provider, string purpose)
+    {
+        ArgumentNullException.ThrowIfNull(provider, nameof(provider));
+        ArgumentException.ThrowIfNullOrWhiteSpace(purpose, nameof(purpose));
+
+        _protector = provider.CreateProtector(purpose);
+    }
+
+    /// <inheritdoc/>
+    public string Encrypt(string plainText) => _protector.Protect(plainText);
+
+    /// <inheritdoc/>
+    public string Decrypt(string cipherText) => _protector.Unprotect(cipherText);
+
+}
+
+--1.4 Зарегистрируйте сервис в DI‑контейнере:
+
+builder.Services.AddScoped<ISecretsService, SecretsService>();
+
+--1.5 Создайте файл с секретом 
+/etc/consoleapp/secrets/encrypted-secrets.json:
+
+--1.5.1 Настраиваем права
+whoami --определили текущего пользователя
+
+sudo mkdir -p /etc/consoleapp/secrets
+sudo chown anton:anton /etc/consoleapp/secrets
+sudo chmod 600 /etc/consoleapp/secrets/encrypted-secrets.json
+
+--18.6 Создаем папку для ключей
+sudo mkdir -p /etc/consoleapp/keys
+sudo chown anton:anton /etc/consoleapp/keys
+sudo chmod 700 /etc/consoleapp/keys
+
+
+--1.7 Первоначальное шифрование секрета
+--1.7.1 Вручную с помощью следующего кода:
+
+using var scope = app.Services.CreateScope();
+var secretsService = scope.ServiceProvider.GetRequiredService<ISecretsService>();
+
+var encryptedPostgres = secretsService.Encrypt("host=localhost;port=5432;database=DbContracts;user id=postgres;password=пароль");
+var encryptedMsSql = secretsService.Encrypt("Server=127.0.0.1,1433;Database=DbContracts;User ID=sa;Password=пароль;MultipleActiveResultSets=true;TrustServerCertificate=true");
+
+Console.WriteLine($"Postgres: {encryptedPostgres}");
+Console.WriteLine($"MS SQL: {encryptedMsSql}");
+
+--2. Создание строго типизированных клиентов с помощью NSwag 
+
+--2.1 Установить пакет Microsoft.dotnet-openapi
+
+dotnet tool install --global Microsoft.dotnet-openapi --version 9.0.15
+dotnet tool update --global Microsoft.dotnet-openapi --version 9.0.15 
+
+--2.2 Из папки проекта консольного приложения добавьте ссылку OpenAPI
+
+dotnet openapi add url http://localhost:5000/swagger/v1/swagger.json --output-file OpenAPIs/rmwebapi.json
+
+openapi
+
+    Отвечает за управление ссылками на OpenAPI в проекте.
+
+add
+    Добавляет новую ссылку на OpenAPI‑спецификацию в проект.
+
+url
+
+    Указывает, что источник спецификации — URL (а не локальный файл). Например, http://localhost:5000/swagger/v1/swagger.json
+
+--output-file OpenAPIs\rmwebapi.json
+
+    Параметр, задающий путь и имя файла для сохранения локальной копии OpenAPI‑документа.
+    OpenAPIs/rmwebapi.json — путь относительно текущей директории: 
+    	папка OpenAPIs; 
+    	файл rmwebapi.json.
+    	
+В файле csproj было добавлена следующий элемент группы:
+<OpenApiReference Include="OpenAPIs/rmwebapi.json" SourceUrl="http://localhost:5000/swagger/v1/swagger.json" />
+
+--2.3 Обновите пакеты, добавленные в ваш проект, выполнив следую­щие команды из папки проекта:
+
+dotnet add package NSwag.ApiDescription.Client
+dotnet add package Microsoft.Extensions.ApiDescription.Client
+dotnet add package Newtonsoft.Json
+
+--2.4 Актуализируем добавленный в пункте 2.2 элемента
+
+<OpenApiReference Include="OpenAPIs/rmwebapi.json" 
+      SourceUrl="http://localhost:5000/swagger/v1/swagger.json" 
+	    Namespace="RmWebApi"
+	    ClassName="RmWebApiClient">
+      <Options>/UseBaseUrl:false /GenerateClientInterfaces:true /JsonLibrary:SystemTextJson</Options>
+</OpenApiReference>
+
+где
+/UseBaseUrl:false – если значение равно false, NSwag удаляет пара­метр baseUrl из созданного конструктора клиента и вместо этого полагается на HttpClient, чтобы получить правильный базовый адрес. По умолчанию установлено значение true;
+/GenerateClientInterfaces:true – если задано значение true, NSwag создает интерфейс для клиента, содержащий все конечные точки. Сгенерированный клиент реализует этот интерфейс.
+По умолчанию имеет значение false;
+/JsonLibrary:SystemTextJson – этот параметр определяет используе­мую библиотеку сериализации JSON. По умолчанию использует­ся Newtonsoft.Json.
+
+--2.4 Актуализация клиента, после внесения изменений в описание API (по требованию)
+
+dotnet openapi refresh http://localhost:5000/swagger/v1/swagger.json
+
+--2.5 Сделать читаемыми названия методов в сгенерированном клиенте
+
+--2.5.1 Установите пакет Swashbuckle.AspNetCore.Annotations в проект WebAPI
+
+dotnet add package Swashbuckle.AspNetCore.Annotations
+
+--2.5.2 В Program.cs (или Startup.cs) включите аннотации:
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.EnableAnnotations();
+});
+
+--2.5.3 Добавить у нужного метода контроллера настройку имени
+
+/// <summary>
+/// Предоставляет все единицы работ.
+/// </summary>
+/// <returns>Единицы работ.</returns>
+[HttpGet, SwaggerOperation(OperationId = "GetWorkUnitsAsync")]
+public async Task<IEnumerable<WorkUnitResponse>> GetAllAsync()
+{
+	var workUnits = await _workUnitService.GetAllAsync();
+
+	var result = workUnits?.Select(_workUnitMapper.Map) ?? [];
+
+	return result;
+}
+
+--2.5.4 Собрать и запустить API.
+--2.5.5 Повторить действия пункта 2.4.
+
