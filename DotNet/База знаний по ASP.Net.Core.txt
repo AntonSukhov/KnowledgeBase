@@ -110,7 +110,7 @@ var encryptedMsSql = secretsService.Encrypt("Server=127.0.0.1,1433;Database=DbCo
 Console.WriteLine($"Postgres: {encryptedPostgres}");
 Console.WriteLine($"MS SQL: {encryptedMsSql}");
 
---2. Создание строго типизированных клиентов с помощью NSwag 
+--2. Создание строго типизированных клиентов с помощью Microsoft.dotnet-openapi
 
 --2.1 Установить пакет Microsoft.dotnet-openapi
 
@@ -119,7 +119,7 @@ dotnet tool update --global Microsoft.dotnet-openapi --version 9.0.15
 
 --2.2 Из папки проекта консольного приложения добавьте ссылку OpenAPI
 
-dotnet openapi add url http://localhost:5000/swagger/v1/swagger.json --output-file OpenAPIs/rmwebapi.json
+dotnet openapi add url http://localhost:5000/swagger/v1/swagger.json --output-file OpenApiSpecs/RmWebApi.v1.json
 
 openapi
 
@@ -132,36 +132,21 @@ url
 
     Указывает, что источник спецификации — URL (а не локальный файл). Например, http://localhost:5000/swagger/v1/swagger.json
 
---output-file OpenAPIs\rmwebapi.json
+--output-file OpenApiSpecs/RmWebApi.v1.json
 
     Параметр, задающий путь и имя файла для сохранения локальной копии OpenAPI‑документа.
-    OpenAPIs/rmwebapi.json — путь относительно текущей директории: 
-    	папка OpenAPIs; 
-    	файл rmwebapi.json.
+    OpenApiSpecs/RmWebApi.v1.json — путь относительно текущей директории: 
+    	папка OpenApiSpecs; 
+    	файл RmWebApi.v1.json.
     	
 В файле csproj было добавлена следующий элемент группы:
-<OpenApiReference Include="OpenAPIs/rmwebapi.json" SourceUrl="http://localhost:5000/swagger/v1/swagger.json" />
+<OpenApiReference Include="OpenApiSpecs/RmWebApi.v1.json" SourceUrl="http://localhost:5000/swagger/v1/swagger.json" />
 
 --2.3 Обновите пакеты, добавленные в ваш проект, выполнив следую­щие команды из папки проекта:
 
 dotnet add package NSwag.ApiDescription.Client
 dotnet add package Microsoft.Extensions.ApiDescription.Client
 dotnet add package Newtonsoft.Json
-
---2.4 Актуализируем добавленный в пункте 2.2 элемента
-
-<OpenApiReference Include="OpenAPIs/rmwebapi.json" 
-      SourceUrl="http://localhost:5000/swagger/v1/swagger.json" 
-	    Namespace="RmWebApi"
-	    ClassName="RmWebApiClient">
-      <Options>/UseBaseUrl:false /GenerateClientInterfaces:true /JsonLibrary:SystemTextJson</Options>
-</OpenApiReference>
-
-где
-/UseBaseUrl:false – если значение равно false, NSwag удаляет пара­метр baseUrl из созданного конструктора клиента и вместо этого полагается на HttpClient, чтобы получить правильный базовый адрес. По умолчанию установлено значение true;
-/GenerateClientInterfaces:true – если задано значение true, NSwag создает интерфейс для клиента, содержащий все конечные точки. Сгенерированный клиент реализует этот интерфейс.
-По умолчанию имеет значение false;
-/JsonLibrary:SystemTextJson – этот параметр определяет используе­мую библиотеку сериализации JSON. По умолчанию использует­ся Newtonsoft.Json.
 
 --2.4 Актуализация клиента, после внесения изменений в описание API (по требованию)
 
@@ -198,4 +183,58 @@ public async Task<IEnumerable<WorkUnitResponse>> GetAllAsync()
 
 --2.5.4 Собрать и запустить API.
 --2.5.5 Повторить действия пункта 2.4.
+
+--3. Создание строго типизированных клиентов с помощью NSwag
+
+--3.1 Получение OpenAPI‑спецификации из работающего API
+
+--3.1.1 Создайте папку OpenApiSpecs в приложении, например, RM.Api
+
+--3.1.2 Сохранить файл swagger.json в папку OpenApiSpecs
+
+Перейдите по ссылке http://localhost:5000/swagger/v1/swagger.json и сохраните файл как OpenApiSpecs/RmWebApi.v1.json. 
+
+--3.2 Глобально установить NSwag.ConsoleCore
+
+dotnet tool install -g NSwag.ConsoleCore
+
+--3.3 Создание конфигурации NSwag (nswag.json)
+Например такой:
+{
+  "runtime": "Net90",
+  "documentGenerator": {
+    "fromDocument": {
+      "json": "OpenApiSpecs/RmWebApi.v1.json"
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "className": "RmWebApiClient",
+      "output": "GeneratedApiClients/RmWebApiClient.cs",
+      "clientClassAccessModifier": "internal",
+      "typeAccessModifier": "internal",
+      "generateNullableReferenceTypes": true,
+      "useBaseUrl": false,
+      "jsonLibrary": "SystemTextJson"
+    }
+  }
+}
+
+clientClassAccessModifier — определяет модификатор доступа для классов клиента (например, {controller}Client). По умолчанию: "public".
+typeAccessModifier — задаёт модификатор доступа для DTO‑классов (Data Transfer Objects) и других типов, генерируемых вместе с клиентом. По умолчанию: "public"
+
+--3.4 Выполните генерацию типизированного клиента
+nswag run nswag.json
+
+
+--3.5 Добавить папку GeneratedApiClients с содержимым в игнор Git (по требованию)
+
+--3.5.1 Найдите файл .gitignore в корне вашего Git‑репозитория. Если его нет — создайте:
+
+--3.5.2 Добавьте правило игнорирования
+
+# Folder with classes of generated client APIs
+GeneratedApiClients/
+
+ 
 
