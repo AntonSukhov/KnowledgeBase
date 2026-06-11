@@ -704,6 +704,8 @@ grant select on REMOTE_SCHEMA_NAME.SEQ$CUSTOMERS$ID to CURRENT_SCHEMA_NAME with 
 
 /* Работа с коллекцией элементов пользовательского типа*/
 
+/*Пример 1*/
+
 --1. Создать пользовательский тип
 
 CREATE TYPE MyShema.Department AS OBJECT (
@@ -749,6 +751,97 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE('Данных не найдено');
     END IF;
 
+END;
+
+/*Пример 2*/
+
+--Процедура:
+PROCEDURE P$GET_EMPLOYEES 
+(
+	department_ids IN VARCHAR2,
+	employees_cur  OUT SYS_REFCURSOR
+)
+AS
+   v_department_ids     SYS.ODCINUMBERLIST;
+   v_departments        TEST.DEPARTMENT_COLLECTION;
+BEGIN
+	
+	 v_department_ids := TEST.string_to_number_list(department_ids);
+	 
+	 SELECT TEST.DEPARTMENT_RECORD(d1.ID, d1.NAME)
+	 BULK COLLECT INTO v_departments
+	 FROM TAXFL_TEST.DEPARTMENT d1
+	    JOIN 
+	     (  SELECT COLUMN_VALUE AS ID
+	     	FROM TABLE(v_department_ids)
+		 )  d2
+	     ON  d1.ID = d2.ID;
+	
+	 
+	 OPEN employees_cur FOR
+	   SELECT e.FIO, e.STATUSNAME AS STATUS_NAME
+	   FROM TEST.EMPLOYEE 		e
+	     JOIN TABLE(v_departments)      d  ON  e.DEPARTMENT_ID = d.ID;
+	
+END P$GET_EMPLOYEES;
+
+--Функция:
+CREATE OR REPLACE FUNCTION TEST.string_to_number_list(
+  p_string IN VARCHAR2,
+  p_delimiter IN VARCHAR2 DEFAULT ','
+) RETURN SYS.ODCINUMBERLIST AS
+  v_result SYS.ODCINUMBERLIST := SYS.ODCINUMBERLIST();
+  v_start NUMBER := 1;
+  v_end NUMBER;
+BEGIN
+  IF p_string IS NULL THEN
+    RETURN v_result;
+  END IF;
+
+  LOOP
+    v_end := INSTR(p_string, p_delimiter, v_start);
+    IF v_end = 0 THEN
+      v_result.EXTEND;
+      v_result(v_result.COUNT) := TO_NUMBER(SUBSTR(p_string, v_start));
+      EXIT;
+    ELSE
+      v_result.EXTEND;
+      v_result(v_result.COUNT) := TO_NUMBER(SUBSTR(p_string, v_start, v_end - v_start));
+      v_start := v_end + 1;
+    END IF;
+  END LOOP;
+
+  RETURN v_result;
+END string_to_number_list;
+
+--Вызов процедуры:
+DECLARE
+  v_cursor SYS_REFCURSOR;
+ v_department_ids VARCHAR(100 CHAR):='1,2,3';
+  v_fio VARCHAR2(100);
+  v_status_name VARCHAR2(50);
+BEGIN
+	
+  TEST.PAC$TEST_SAA.P$GET_EMPLOYEES(
+   v_department_ids,
+    v_cursor
+  );
+
+  LOOP
+    FETCH v_cursor INTO v_fio, v_status_name;
+    
+  	EXIT WHEN v_cursor%NOTFOUND;
+  
+    DBMS_OUTPUT.PUT_LINE(v_fio || ' | ' || v_status_name);
+  END LOOP;
+
+  CLOSE v_cursor;
+EXCEPTION
+  WHEN OTHERS THEN
+    DBMS_OUTPUT.PUT_LINE('Ошибка: ' || SQLERRM);
+    IF v_cursor%ISOPEN THEN
+      CLOSE v_cursor;
+    END IF;
 END;
 
 --5. Замены PL/SQL на SQL
@@ -843,6 +936,32 @@ CREATE OR REPLACE TYPE BODY SCHEMA_NAME.TYPE_NAME IS
     END;
 END;
 /
+
+--6.2 Обход типизированной коллекции UDT
+
+
+CREATE TYPE P_REC AS OBJECT (
+    ATTR1 VARCHAR2(64),
+    ATTR2 VARCHAR2(128),
+    ATTR3 VARCHAR2(128),
+    ATTR4 VARCHAR2(128)
+);
+
+CREATE TYPE P_REC_LIST AS TABLE OF P_REC;
+
+--Обход коллекции
+DECLARE
+    tmpPList P_REC_LIST;
+BEGIN
+
+	FOR i IN 1..tmpPList.COUNT LOOP
+		DBMS_OUTPUT.PUT_LINE('ATTR1: ' || tmpPList(i).ATTR1);
+		DBMS_OUTPUT.PUT_LINE('ATTR2: ' || tmpPList(i).ATTR2);
+		-- и так далее для остальных атрибутов
+	END LOOP;
+
+END;
+
 
 -- 6. Генерация случайных чисел
 
@@ -1130,4 +1249,38 @@ FORALL i IN 1..v_departments.COUNT
 	UPDATE SCHEM.DEPARTMENTS
 	SET DELETE_DATE = TO_DATE('2026.03.05','YYYY.MM.DD')
 	WHERE ID = v_departments(i).id;
+	
+-- 9. Сохранение значения в переменную даже если возникает ошибка отсутствия данных
+
+--9.1 Использование агрегатной функции (самый простой)
+
+SELECT MAX(NAME)
+INTO v_department_name
+FROM SCHEM.DEPARTMENTS
+WHERE  ID = v_department_id;
+
+Как работает:
+
+    1) MAX() всегда возвращает значение или NULL, если строк нет.
+    2) Не требует дополнительной обработки исключений.
+    3) Подходит, если ожидается не более одной строки (или нужно взять любое значение из нескольких).
+
+--9.2 Использование подзапроса с получением только одной строки
+
+SELECT (
+    SELECT NAME
+    FROM SCHEM.DEPARTMENTS
+    WHERE  ID = v_department_id
+           --Добавить условие по требованию: AND ROWNUM = 1 
+)
+INTO v_department_name
+FROM DUAL;
+
+Как работает:
+
+    1) Подзапрос выполняется внутри SELECT из DUAL.
+    2) Если данных нет, подзапрос вернёт NULL.
+    3) ROWNUM = 1 гарантирует, что даже при наличии нескольких строк будет взята только одна (предотвращает ошибку TOO_MANY_ROWS).
+    4) Более универсально, чем просто MAX(), так как сохраняет исходное значение без агрегации.
+
 
