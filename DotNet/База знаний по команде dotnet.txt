@@ -205,6 +205,22 @@ dotnet --version
 
 --16. Добавление пользовательского секрета
 
+--16.1 Инициализация User Secrets
+
+В корне проекта выполните:
+dotnet user-secrets init
+
+Это добавит в .csproj элемент:
+<UserSecretsId>your-generated-id</UserSecretsId>
+
+--16.2 Добавление секрета
+
+Пример 1:
+dotnet user-secrets set "ConnectionStrings:PostgreDbContractConnection" "host=localhost;port=5432;database=DbContracts;user id=postgres;password=пароль"
+dotnet user-secrets set "ConnectionStrings:MsSqlDbContractConnection" "Server=127.0.0.1,1433;Database=DbContracts;User ID=sa;Password=пароль;MultipleActiveResultSets=true;TrustServerCertificate=true"
+
+
+Пример 2:
 dotnet user-secrets set "MapSettings:GoogleMapsApiKey" F5RJT9GFHKR7
 
 где в файле secrets.json будет добавлен следующий json:
