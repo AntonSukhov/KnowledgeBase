@@ -1,0 +1,131 @@
+--1. Способы удаления данных в таблице
+
+--1.1 Если кол-во удаляемых данных <= 32767
+
+DECLARE
+    v_ids            SYS.ODCINUMBERLIST;
+    v_ids_batch      SYS.ODCINUMBERLIST;
+    v_ids_count      NUMBER := 0;
+    v_offset         NUMBER := 0;
+    v_batch_size     NUMBER := 1000;            -- Размер пакета
+    v_start_time1    TIMESTAMP;
+    v_start_time2    TIMESTAMP;
+    v_sql_row_count  NUMBER := 0;
+BEGIN
+
+    v_start_time1 := SYSTIMESTAMP;
+
+    -- 1. Сохранение данных в память
+    SELECT SD.ID
+    BULK COLLECT INTO v_ids
+    FROM TAXFL_TEST.SALES_DATA SD
+    WHERE SD.SALE_YEAR = 2025;
+
+    v_ids_count := v_ids.COUNT;
+
+    -- 2. Удаление строк
+    v_start_time1 := SYSTIMESTAMP;
+
+    WHILE v_offset < v_ids_count LOOP
+
+        -- Выбираем следующий пакет ID
+        SELECT Id
+        BULK COLLECT INTO v_ids_batch
+        FROM (
+            SELECT COLUMN_VALUE AS Id,
+                   ROW_NUMBER() OVER (ORDER BY COLUMN_VALUE) AS rn
+            FROM TABLE(v_ids)
+        )
+        WHERE rn > v_offset AND rn <= v_offset + v_batch_size;
+
+        IF v_ids_batch.COUNT > 0 THEN
+            v_start_time2 := SYSTIMESTAMP;
+
+            DELETE FROM TAXFL_TEST.SALES_DATA
+            WHERE ID IN (SELECT COLUMN_VALUE FROM TABLE(v_ids_batch));
+
+            v_sql_row_count := SQL%ROWCOUNT;
+			
+			COMMIT;
+
+        END IF;
+
+        v_offset := v_offset + v_batch_size;
+    END LOOP;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE(DBMS_UTILITY.FORMAT_ERROR_STACK || ' - ' || SQLERRM);
+END;
+
+--1.2 Если кол-во удаляемых данных > 32767
+
+--1.2.1 Пакетное чтение и обработка без сохранения всех ID в памяти
+
+Читаем и удаляем данные порциями напрямую из таблицы — не сохраняем все ID в коллекцию.
+
+DECLARE
+    v_batch_size NUMBER := 1000;
+    v_deleted_count NUMBER := 0;
+BEGIN
+    LOOP
+        DELETE FROM TAXFL_TEST.SALES_DATA
+        WHERE SALE_YEAR = 2025                        -- Дополнительное условие для подстраховки.
+          AND ROWID IN (
+              SELECT ROWID
+              FROM TAXFL_TEST.SALES_DATA
+              WHERE SALE_YEAR = 2025
+              AND ROWNUM <= v_batch_size
+          );
+
+        v_deleted_count := SQL%ROWCOUNT;
+        COMMIT;
+
+        EXIT WHEN v_deleted_count = 0;
+
+        DBMS_OUTPUT.PUT_LINE('Удалено в пакете: ' || v_deleted_count);
+    END LOOP;
+
+    DBMS_OUTPUT.PUT_LINE('Удаление завершено');
+END;
+/
+
+Плюсы: нет ограничений по объёму, минимальная нагрузка на память.
+Минусы: может быть медленнее при сложных условиях отбора.
+
+--1.2.2 Курсор с пакетной обработкой
+
+Используем курсор для последовательного чтения ID и удаления порциями.
+
+DECLARE
+    CURSOR c_ids IS
+        SELECT ID
+        FROM TAXFL_TEST.SALES_DATA
+        WHERE SALE_YEAR = 2025;
+
+    TYPE t_id_table IS TABLE OF NUMBER;
+    v_ids t_id_table;
+    v_batch_size NUMBER := 1000;
+BEGIN
+    OPEN c_ids;
+
+    LOOP
+        FETCH c_ids BULK COLLECT INTO v_ids LIMIT v_batch_size;
+        EXIT WHEN v_ids.COUNT = 0;
+
+        FORALL i IN 1..v_ids.COUNT
+            DELETE FROM TAXFL_TEST.SALES_DATA
+            WHERE ID = v_ids(i);
+
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('Удалено в пакете: ' || v_ids.COUNT);
+    END LOOP;
+
+    CLOSE c_ids;
+    
+     DBMS_OUTPUT.PUT_LINE('Удаление завершено');
+END;
+
+
+
