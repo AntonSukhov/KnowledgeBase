@@ -210,6 +210,7 @@ dotnet tool install -g NSwag.ConsoleCore
   "codeGenerators": {
     "openApiToCSharpClient": {
       "className": "RmWebApiClient",
+      "namespace": "RM.Api.GeneratedApiClients",
       "output": "GeneratedApiClients/RmWebApiClient.cs",
       "clientClassAccessModifier": "internal",
       "typeAccessModifier": "internal",
