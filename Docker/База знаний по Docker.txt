@@ -130,6 +130,32 @@ docker run -d -p 9000:9000 --name portainer --restart always -v /var/run/docker.
 
 --14.5 В браузере перейти по ссылке http://localhost:9000
 
+--15. Создание MCP-сервера для работы с PG в docker
+--15.1 Скачайте образ MCP-сервера
+docker pull crystaldba/postgres-mcp
+
+--15.2 Запустите контейнер с MCP-сервером
+
+docker run -d \
+  --name mcp-postgres \
+  --network subd-net \
+  -p 8000:8000 \
+  -e DATABASE_URI="postgresql://postgres:sa@postgresql-container:5432/postgres" \
+  crystaldba/postgres-mcp \
+  --access-mode=unrestricted \
+  --transport=sse
+  
+Разбор параметров:
+--name mcp-postgres: имя нового контейнера.
+--network subd-net: важно. Подключает MCP-сервер к вашей общей сети, где живёт база.
+-p 8000:8000: открывает порт для связи с вашими программами (Cursor, Claude и т.д.).
+DATABASE_URI: строка подключения.
+postgresql://postgres:sa — ваши логин и пароль.
+postgresql-container — имя контейнера с базой (вместо localhost).
+5432 — порт внутри сети.
+postgres — имя базы данных.
+--transport=sse: запускает сервер в режиме, доступном для подключений извне (SSE).
+
     
 
 
