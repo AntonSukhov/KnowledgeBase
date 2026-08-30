@@ -58,7 +58,17 @@ OPTIONS (
 Примечание - для удаления внешнего сервера выполните команду:
 DROP SERVER mssql_server CASCADE;
 
-2.2 Настройте сопоставление пользователей (user mapping)
+2.2 Посмотреть список созданных внешних серверов
+
+SELECT 
+    	s.srvname 		AS server_name,
+    	w.fdwname 		AS wrapper,
+    	s.srvowner::regrole 	AS owner,
+    	s.srvoptions 		AS options
+FROM pg_foreign_server s
+	JOIN pg_foreign_data_wrapper w ON w.oid = s.srvfdw
+
+2.3 Настройте сопоставление пользователей (user mapping)
 Свяжите пользователя PostgreSQL с учётной записью MS SQL:
 
 CREATE USER MAPPING FOR postgres
@@ -69,7 +79,7 @@ OPTIONS (
 );
 
 
-2.3 Создайте внешнюю таблицу
+2.4 Создайте внешнюю таблицу
 Опишите структуру таблицы из MS SQL в PostgreSQL:
 
 CREATE FOREIGN TABLE "OuterDepartments" (
