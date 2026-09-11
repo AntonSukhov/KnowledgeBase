@@ -237,5 +237,14 @@ nswag run nswag.json
 # Folder with classes of generated client APIs
 GeneratedApiClients/
 
+--4. Маппинг двух разных URL методов типа Get на один обработчик
+
+app.MapGet("/employee/{id:int?}", (int? id, [FromQuery(Name = "id")] int? id1)=>
+{
+    
+    //some code
+
+});
+
  
 
