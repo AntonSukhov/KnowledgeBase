@@ -239,12 +239,151 @@ GeneratedApiClients/
 
 --4. Маппинг двух разных URL методов типа Get на один обработчик
 
+Пример 1:
 app.MapGet("/employee/{id:int?}", (int? id, [FromQuery(Name = "id")] int? id1)=>
-{
-    
+{   
     //some code
-
 });
+
+Пример 2:
+app.MapGet("/employee/{id:int?}", (
+    [FromRoute(Name ="id")] int? idFromRoute, 
+    [FromQuery(Name ="id")] int? idFromQuery, 
+    HttpContext context)=>
+{
+    //some code
+});
+
+Пример 3:
+
+//пример URL: /products/1/paged?page=10 и в заголовке создан параметр  pageSize со значением 100
+app.MapGet("/products/{id:int}/paged", (
+    int id, 
+    int page,
+    [FromHeader] int pageSize,
+    HttpContext context)=>
+{
+   //some code
+});
+
+Пример 4:
+
+//Пользовательский (простой) тип, обязательно реализующий метод TryParse
+public readonly struct ProductId
+{
+    public string Value { get; }
+
+    private ProductId(string value) => Value = value;
+
+    // Ключевой метод: его ищет инфраструктура привязки модели
+    public static bool TryParse(string? s, out ProductId result)
+    {
+        result = default;
+        if (string.IsNullOrEmpty(s)) return false;
+
+        // Формат: буква 'p' + целое число, например p123
+        if (s.Length < 2 || s[0] != 'p') return false;
+
+        if (!int.TryParse(s.AsSpan(1), out _)) return false;
+
+        result = new ProductId(s);
+        return true;
+    }
+}
+
+//Ограничение маршрута:
+/// <summary>
+/// Ограничение маршрута, проверяющее, что значение параметра
+/// состоит из заданного строкового префикса и следующего за ним целого числа.
+/// Например, при префиксе "p" принимаются значения "p123", "p456" и т. д.
+/// </summary>
+public class PrefixIdRouteConstraint : IRouteConstraint
+{
+    private readonly string _prefix;
+
+    /// <summary>
+    /// Инициализирует экземпляр <see cref="PrefixIdRouteConstraint"/>.
+    /// </summary>
+    /// <param name="prefix">Строковый префикс, с которого должно начинаться значение параметра маршрута.</param>
+    public PrefixIdRouteConstraint(string prefix)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(prefix);
+
+        _prefix = prefix;
+    }
+
+    /// <summary>
+    /// Определяет, удовлетворяет ли значение параметра маршрута формату
+    /// «префикс + целое число». Вызывается инфраструктурой маршрутизации
+    /// как для входящих запросов, так и при генерации URL.
+    /// </summary>
+    /// <param name="httpContext">Текущий HTTP-контекст запроса (может быть null при генерации URL).</param>
+    /// <param name="route">Маршрут, для которого проверяется ограничение.</param>
+    /// <param name="routeKey">Имя параметра маршрута, к которому привязано ограничение (например, "id").</param>
+    /// <param name="values">Словарь значений параметров маршрута, извлечённых из URL или переданных при генерации.</param>
+    /// <param name="routeDirection">Направление маршрутизации: входящий запрос или генерация URL.</param>
+    /// <returns>
+    /// <see langword="true"/>, если значение существует, начинается с префикса
+    /// и остаток строки является целым числом; иначе <see langword="false"/>.
+    /// </returns>
+    public bool Match(
+        HttpContext? httpContext,
+        IRouter? route,
+        string routeKey,
+        RouteValueDictionary values,
+        RouteDirection routeDirection)
+    {
+        // 1. Извлекаем значение параметра маршрута по ключу routeKey.
+        //    Если параметр отсутствует или равен null — ограничение не проходит.
+        if (!values.TryGetValue(routeKey, out var value) || value is null)
+            return false;
+
+        // 2. Приводим значение к строке: в словаре оно может храниться
+        //    как строка, число или другой объект.
+        var str = value.ToString();
+
+        // 3. Проверяем формат: строка длиннее префикса (значит, после префикса
+        //    есть хотя бы один символ), начинается с префикса и остаток
+        //    строки является целым числом. AsSpan избегает выделения
+        //    промежуточной строки при проверке числовой части.
+        return str?.Length > _prefix.Length
+            && str.StartsWith(_prefix, StringComparison.Ordinal)
+            && int.TryParse(str.AsSpan(_prefix.Length), out _);
+    }
+}
+
+//Добавляет ограничитель в Ioc:
+builder.Services.Configure<RouteOptions>(options =>
+{
+    options.ConstraintMap.Add(nameof(ProductId), typeof(PrefixIdRouteConstraint));
+});
+
+//Маппинг конечной точки. URL: http://localhost:5000/products/p101/paged?page=10
+app.MapGet("/products/{id:ProductId(p)}/paged", (
+    ProductId id, 
+    int page,
+    [FromHeader] int pageSize,
+    HttpContext context)=>
+{
+});
+
+Пример 5 (не используем класс ограничения маршрута):
+
+//Маппинг конечной точки. URL: http://localhost:5000/products/p101/paged?page=10
+app.MapGet("/products/{id}/paged", (
+    ProductId id, 
+    int page,
+    [FromHeader] int pageSize,
+    HttpContext context)=>
+{
+});
+
+[FromRoute] – явно привязывается к пара­метрам маршрута.
+[FromQuery] – явно привязывается к строке запроса.
+[FromHeader] – явно привязывается к зна­чениям заголовка.
+
+
+
 
  
 
