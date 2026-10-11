@@ -124,9 +124,11 @@ sudo docker rm -f 25a34d9e06e7
 
 --14.3 Загрузка нового образа (например, до версии 2.39.1)
 docker pull portainer/portainer-ce:2.39.1 
+docker pull portainer/portainer-ce:latest
 
 --14.4 Запуск обновлённого контейнера
 docker run -d -p 9000:9000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:2.39.1
+docker run -d -p 9000:9000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest
 
 --14.5 В браузере перейти по ссылке http://localhost:9000
 
