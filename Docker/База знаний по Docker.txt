@@ -123,14 +123,24 @@ sudo docker rm -f 25a34d9e06e7
 --14.2.3 Проверить, что он удален (выполнить команду пункта 14.1.1)
 
 --14.3 Загрузка нового образа (например, до версии 2.39.1)
-docker pull portainer/portainer-ce:2.39.1 
-docker pull portainer/portainer-ce:latest
+sudo docker pull portainer/portainer-ce:2.39.1 
+sudo docker pull portainer/portainer-ce:latest
 
 --14.4 Запуск обновлённого контейнера
-docker run -d -p 9000:9000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:2.39.1
-docker run -d -p 9000:9000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest
+sudo docker run -d -p 9000:9000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:2.39.1
+sudo docker run -d -p 9000:9000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest
 
 --14.5 В браузере перейти по ссылке http://localhost:9000
+
+--14.6 При первой авторизации указать логин, пароль 12 символов и токен
+
+--14.6.1 Получить токен
+
+sudo docker logs portainer | grep setup_token
+
+--14.7 Введите токен и перезагрузите Portainer
+
+sudo docker restart portainer
 
 --15. Создание MCP-сервера для работы с PG в docker
 --15.1 Скачайте образ MCP-сервера
