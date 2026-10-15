@@ -158,6 +158,64 @@ postgresql-container — имя контейнера с базой (вместо
 postgres — имя базы данных.
 --transport=sse: запускает сервер в режиме, доступном для подключений извне (SSE).
 
+--16. Установить docker и его компоненты на Ubuntu
+
+--16.1. Обновите список пакетов и установите зависимости.
+
+sudo apt update
+sudo apt install -y ca-certificates curl gnupg lsb-release
+
+Эти пакеты нужны, чтобы система могла работать с HTTPS-репозиториями и проверять подписи. 
+
+--16.2. Добавьте GPG-ключ Docker. 
+
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+Это нужно, чтобы APT мог проверять подлинность пакетов из официального репозитория. 
+
+--16.3. Добавьте репозиторий Docker.
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+Команда автоматически определит кодовое имя вашей Ubuntu (для 26.04 это resolute). serverspace.ru +1
+Если репозиторий Docker ещё не добавил явную поддержку Ubuntu 26.04, APT может взять ближайшую поддерживаемую версию — но в большинстве случаев это не проблема, и вы получите актуальные пакеты. 
+
+--16.4. Обновите индекс пакетов и установите Docker.
+
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+Что устанавливается:
+
+    docker-ce — сам Docker Engine (Community Edition);
+    docker-ce-cli — клиент командной строки;
+    containerd.io — среда выполнения контейнеров;
+    docker-buildx-plugin — инструмент для сборки мультиплатформенных образов;
+    docker-compose-plugin — Docker Compose v2 как плагин CLI. 
+
+--16.5. Запустите службу и добавьте в автозагрузку.
+
+sudo systemctl enable docker
+sudo systemctl start docker
+
+--16.6. Проверьте статус: 
+
+sudo systemctl status docker. 
+
+В выводе должна быть строка Active: active (running). 
+Если служба не запустилась, посмотрите журнал: 
+
+sudo journalctl -u docker --no-pager -n 50. 
+
+--16.7. Проверьте установку. Запустите тестовый контейнер hello-world:
+
+sudo docker run hello-world
+
+Если всё работает, вы увидите сообщение: Hello from Docker! This message shows that your installation appears to be working correctly
+
+
     
 
 
