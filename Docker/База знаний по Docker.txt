@@ -168,6 +168,53 @@ postgresql-container — имя контейнера с базой (вместо
 postgres — имя базы данных.
 --transport=sse: запускает сервер в режиме, доступном для подключений извне (SSE).
 
+--15.3 Установить MCP сервер для MSSQL
+--15.3.1 Запустить контейнер с MCP-сервером
+docker run -d \
+  --name mcp-mssql \
+  --network subd-net \
+  -e MSSQL_CONNECTIONSTRING="Server=mssql-container;Database=master;User Id=sa;Password=MY_PASSWORD;TrustServerCertificate=True" \
+  aadversteeg/mssqlclient-mcp-server:latest
+
+--15.3.2 Удалить контейнер (при желании):
+docker rm -f mcp-mssql
+
+--15.3.3 Добавить настройку MCP-сервера в VSCODE
+
+name: Koda
+version: 0.0.1
+schema: v1
+models:
+  - name: Koda Models
+    provider: koda-chat-models
+    model: AUTODETECT
+    roles:
+      - agent
+      - chat
+      - edit
+      - plan
+context:
+  - provider: code
+  - provider: docs
+  - provider: diff
+  - provider: terminal
+  - provider: problems
+  - provider: folder
+  - provider: codebase
+mcpServers:
+  - name: MSSQL-MCP
+    command: docker
+    args:
+      - run
+      - --rm
+      - -i
+      - --network
+      - subd-net
+      - -e
+      - 'MSSQL_CONNECTIONSTRING=Server=mssql-container;Database=master;User=sa;Password=sa;TrustServerCertificate=True'
+      - aadversteeg/mssqlclient-mcp-server:latest
+
+
 --16. Установить docker и его компоненты на Ubuntu
 
 --16.1. Обновите список пакетов и установите зависимости.
