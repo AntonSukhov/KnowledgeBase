@@ -170,16 +170,14 @@ postgres — имя базы данных.
 
 --15.3 Установить MCP сервер для MSSQL
 --15.3.1 Запустить контейнер с MCP-сервером
-docker run -d \
+docker run -d -i \
   --name mcp-mssql \
   --network subd-net \
-  -e MSSQL_CONNECTIONSTRING="Server=mssql-container;Database=master;User Id=sa;Password=MY_PASSWORD;TrustServerCertificate=True" \
+  -e 'MSSQL_CONNECTIONSTRING=Server=mssql-container;Database=master;User=sa;Password=sa;TrustServerCertificate=True' \
+  -e 'DatabaseConfiguration__EnableExecuteQuery=true' \
   aadversteeg/mssqlclient-mcp-server:latest
 
---15.3.2 Удалить контейнер (при желании):
-docker rm -f mcp-mssql
-
---15.3.3 Добавить настройку MCP-сервера в VSCODE
+--15.3.2 Добавить настройку MCP-сервера в VSCODE
 
 name: Koda
 version: 0.0.1
@@ -206,13 +204,17 @@ mcpServers:
     command: docker
     args:
       - run
-      - --rm
+      - --name
+      - mcp-mssql-koda
       - -i
       - --network
       - subd-net
       - -e
       - 'MSSQL_CONNECTIONSTRING=Server=mssql-container;Database=master;User=sa;Password=sa;TrustServerCertificate=True'
+      - -e
+      - 'DatabaseConfiguration__EnableExecuteQuery=true'
       - aadversteeg/mssqlclient-mcp-server:latest
+      # ВАЖНО: здесь НЕТ флага --rm
 
 
 --16. Установить docker и его компоненты на Ubuntu
